@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 40px;color:#1e2a2a">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Summarize Spoken Text</span>
+    <div style="display:flex;align-items:center;gap:14px">
+      <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Time remaining</span>
+      <span style="{{ timerStyle }}">{{ clock }}</span>
+    </div>
+  </div>
+
+  <div style="position:relative;margin:0 48px;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:38px 56px 44px;overflow:hidden">
+    <div style="position:relative;display:flex;flex-direction:column;gap:26px;max-width:1020px">
+      <p style="margin:0;font-size:17px;font-weight:600;line-height:1.5;text-wrap:pretty">You will hear a short lecture. Write a summary for a fellow student who was not present. You should write 20–30 words. You have 8 minutes to finish this task.</p>
+      <div style="width:440px">
+        <dc-import name="StatusBox" status="playing" duration="{{ audio }}" loop="{{ off }}" hint-size="100%,130px"></dc-import>
+      </div>
+      <span style="font-size:15px;line-height:1.65;color:#5c6a68;max-width:820px">Take notes as you listen — the recording plays once, and the timer above covers listening and writing together.</span>
+    </div>
+
+    <div style="position:relative;display:flex;flex-direction:column;gap:14px;margin-top:30px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+        <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Your summary</span>
+        <span style="font-size:13px;color:#7d8a88">20–30 words for full Form marks</span>
+      </div>
+      <textarea id="sst-response" spellcheck="false" placeholder="Two or three clauses is usually enough." style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:16px;line-height:1.7;color:#1e2a2a;background:#fdfdfc;border:1px solid #a9c4c1;border-radius:3px;padding:16px 20px;height:170px;width:100%;box-sizing:border-box;resize:vertical;outline:none" style-focus="border-color:#1f6f6b;box-shadow:0 0 0 3px rgba(31,111,107,0.12)"></textarea>
+      <dc-import name="TextEntryFooter" target-selector="#sst-response" min-words="{{ minWords }}" max-words="{{ maxWords }}" hint-size="100%,90px"></dc-import>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;margin:22px 48px 0">
+    <span style="font-size:13px;line-height:1.6;color:#7d8a88;max-width:560px">Scored on content, form, grammar, vocabulary and spelling. Outside 20–30 words, Form scores zero regardless of content.</span>
+    <button type="button" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 38px;height:46px;cursor:pointer" style-hover="background:#17544f;border-color:#17544f" style-active="background:#123f3b">Submit</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;minutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:8,&quot;min&quot;:1,&quot;max&quot;:30,&quot;unit&quot;:&quot;min&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;audioSeconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:62,&quot;min&quot;:10,&quot;max&quot;:180,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;minWords&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:20,&quot;min&quot;:1,&quot;max&quot;:100,&quot;tsType&quot;:&quot;number&quot;},&quot;maxWords&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:30,&quot;min&quot;:5,&quot;max&quot;:200,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  state = { left: 480 };
+  componentDidMount() {
+    this.setState({ left: (this.props.minutes ?? 8) * 60 });
+    this.iv = setInterval(() => this.setState((s) => ({ left: s.left > 0 ? s.left - 1 : 0 })), 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    const m = Math.floor(this.state.left / 60);
+    const s = this.state.left % 60;
+    const urgent = this.state.left <= 60;
+    return {
+      audio: this.props.audioSeconds ?? 62,
+      minWords: this.props.minWords ?? 20,
+      maxWords: this.props.maxWords ?? 30,
+      off: false,
+      clock: m + ':' + String(s).padStart(2, '0'),
+      timerStyle: {
+        fontFamily: "'IBM Plex Mono',monospace", fontSize: '24px', fontWeight: 500,
+        letterSpacing: '0.02em', padding: '5px 14px', borderRadius: '4px',
+        color: urgent ? '#8a3d24' : '#1e2a2a',
+        background: urgent ? '#fbeee7' : '#ffffff',
+        border: '1px solid ' + (urgent ? '#e2c3b5' : '#e2ded5')
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

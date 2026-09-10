@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 56px;color:#1e2a2a">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Describe Image &mdash; your result</span>
+    <span style="font-size:13px;color:#7d8a88">Attempt 2 &middot; 9 September 2026</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px;margin:0 48px">
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;align-items:center;gap:36px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Trait total</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:500;letter-spacing:-0.01em">13<span style="font-size:20px;color:#5c6a68">/15</span></span>
+      </div>
+      <div style="width:1px;height:52px;background:#e6e2d9"></div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Estimated</span>
+        <span style="font-size:26px;font-weight:600;color:#17544f">CLB 9 &middot; roughly 85&ndash;88</span>
+        <span style="font-size:13px;color:#5c6a68">Inside CLB 9 (84&ndash;88). An estimate from your own history, not a predicted exam result.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-left:auto;align-items:flex-end">
+        <span style="font-size:13px;line-height:1.55;color:#5c6a68;text-align:right;max-width:250px">15.6% of Speaking. Speaking only &mdash; this type feeds no other skill.</span>
+        <a href="Dashboard-Full.dc.html#estimation" style="font-size:13px;text-decoration:underline">How is this estimated?</a>
+      </div>
+    </div>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:16px">
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">The image you described</span>
+      <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-start">
+        <div style="flex:1 1 420px;min-width:0;height:280px">
+          <x-import component-from-global-scope="image-slot" from="./image-slot.js" id="di-chart-visits" placeholder="Drop the Describe Image prompt here &mdash; the bar chart of library visits by branch" shape="rounded" hint-size="100%,280px"></x-import>
+        </div>
+        <div style="flex:0 1 300px;display:flex;flex-direction:column;gap:10px">
+          <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">What a full Content mark needs</span>
+          <sc-for list="{{ contentChecklist }}" as="c" hint-placeholder-count="5">
+            <div style="display:flex;align-items:flex-start;gap:10px">
+              <span style="{{ c.markStyle }}">{{ c.mark }}</span>
+              <span style="{{ c.textStyle }}">{{ c.text }}</span>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <dc-import name="SpeakingAnswerPanel" duration="{{ duration }}" words="{{ words }}" gaps="{{ gaps }}" transcript-note="35 seconds used of 40 &middot; 2 pauses over 0.5s" hint-size="100%,400px"></dc-import>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Three traits</span>
+        <span style="font-size:13px;color:#5c6a68">Content, Pronunciation, Fluency &mdash; 5 marks each</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <dc-import name="TraitBar" name-text="Content" score="{{ four }}" max="{{ five }}" descriptor="No units, no time span" hint-size="100%,40px"></dc-import>
+        <dc-import name="TraitBar" name-text="Pronunciation" score="{{ four }}" max="{{ five }}" descriptor="&ldquo;suburban&rdquo;, &ldquo;consistently&rdquo; drifted" hint-size="100%,40px"></dc-import>
+        <dc-import name="TraitBar" name-text="Fluency" score="{{ five }}" max="{{ five }}" descriptor="Even pace, no restarts" hint-size="100%,40px"></dc-import>
+      </div>
+    </div>
+
+    <dc-import name="TraitFeedback" items="{{ feedback }}" hint-size="100%,360px"></dc-import>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Compared with your own past attempts</span>
+        <span style="font-size:13px;color:#7d8a88">2 attempts &middot; accuracy appears at 5</span>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+        <sc-for list="{{ history }}" as="h" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:104px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5c6a68">{{ h.label }}</span>
+            <div style="{{ h.barStyle }}"></div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500">{{ h.score }}</span>
+          </div>
+        </sc-for>
+        <span style="font-size:14.5px;line-height:1.65;color:#283634;margin-left:12px;max-width:400px;text-wrap:pretty">Up four marks, all from Fluency &mdash; your first attempt had five restarts and ran out of time mid-sentence. Content has scored 4 both times, and both times the missing element was the axis units.</span>
+      </div>
+      <a href="PracticeSelection.dc.html" style="font-size:14px;font-weight:600;text-decoration:none" style-hover="text-decoration:underline">Drill chart openings: units and time span first &#8594;</a>
+    </div>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <a href="PracticeSelection.dc.html" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#1f6f6b;background:#ffffff;border:1px solid #1f6f6b;border-radius:4px;padding:0 30px;height:46px;display:flex;align-items:center;text-decoration:none" style-hover="background:#eaf2f1">Describe this image again</a>
+      <a href="PracticeSelection.dc.html" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 30px;height:46px;display:flex;align-items:center;text-decoration:none" style-hover="background:#17544f;border-color:#17544f">Next Describe Image</a>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  renderVals() {
+    const history = [['Attempt 1', 9], ['This one', 13]];
+    const W = (t, l, p) => [t, l || 0, p];
+    return {
+      four: 4, five: 5, duration: 35,
+      gaps: [[38, 43], [64, 69]],
+      words: [
+        W('This'), W('bar'), W('chart'), W('compares'), W('library'), W('visits'),
+        W('across'), W('four'), W('branches.'), W('The'), W('central'), W('branch'),
+        W('is'), W('by'), W('far'), W('the'), W('busiest,'), W('at'), W('roughly'),
+        W('double'), W('the'), W('next'), W('highest.'), W('The'), W('two'),
+        W('suburban', 1), W('branches'), W('sit'), W('close'), W('together'),
+        W('in'), W('the'), W('middle,'), W('and'), W('the'), W('rural'), W('branch'),
+        W('is'), W('lowest', 0, 'pause'), W('The'), W('gap'), W('between'),
+        W('central'), W('and'), W('rural'), W('is'), W('the'), W('most'),
+        W('striking'), W('feature,'), W('and'), W('it'), W('stays'),
+        W('consistently', 2), W('wide'), W('across'), W('the'), W('whole'),
+        W('period'), W('shown.'), W('Overall,'), W('use'), W('is'),
+        W('concentrated', 0, 'pause'), W('in'), W('the'), W('city'), W('centre.')
+      ],
+      contentChecklist: [
+        { ok: true, text: 'Names the chart type and what it compares' },
+        { ok: true, text: 'Identifies the highest and lowest bars' },
+        { ok: true, text: 'States the most striking relationship' },
+        { ok: false, text: 'Gives the units on the vertical axis \u2014 you never said "thousands of visits"' },
+        { ok: false, text: 'Gives the time span \u2014 you said "the whole period shown" without naming it' }
+      ].map((c) => ({
+        text: c.text,
+        mark: c.ok ? '\u2713' : '\u2717',
+        markStyle: {
+          fontSize: '12px', fontWeight: 600, lineHeight: 1, flex: '0 0 auto',
+          color: '#ffffff', borderRadius: '3px', padding: '3px 7px', marginTop: '2px',
+          background: c.ok ? '#1f6f6b' : '#b58b2a'
+        },
+        textStyle: {
+          fontSize: '13.5px', lineHeight: 1.6,
+          color: c.ok ? '#5c6a68' : '#283634',
+          fontWeight: c.ok ? 400 : 500
+        }
+      })),
+      feedback: [
+        { name: 'Content', score: 4, max: 5, fix: 'You described every shape in the chart but never anchored it in numbers: the vertical axis reads in thousands of visits and the chart covers 2021\u20132025, and you said neither. "Roughly double" is good, but "roughly double, at 48,000 against 24,000" is the full mark.', good: 'You opened by naming the chart type and what it compares, then went highest \u2192 lowest \u2192 most striking gap. That order is exactly what the rubric rewards, and you got there in 35 seconds.' },
+        { name: 'Pronunciation', score: 4, max: 5, fix: '"consistently" came out with the stress on the first syllable and lost its third syllable altogether; "suburban" drifted on the middle vowel. Both are stress-shift words \u2014 say them in isolation five times before your next attempt.', good: 'Every other word in 68 was clear, including "concentrated" and "striking", and you kept full articulation right to the final word rather than trailing off.' },
+        { name: 'Fluency', score: 5, max: 5, fix: 'Nothing to fix. Your two pauses were both at clause boundaries \u2014 after "lowest" and after "concentrated" \u2014 which is where a listener expects them, so neither cost you anything.', good: 'Even pace throughout, no restarts, no repeated words, and no filler. This is up from five restarts on your first attempt.' }
+      ],
+      history: history.map(([label, score]) => ({
+        label, score: score + '/15',
+        barStyle: {
+          width: '36px', height: (score / 15) * 110 + 'px',
+          borderRadius: '3px 3px 0 0',
+          background: label === 'This one' ? '#1f6f6b' : '#c3cfcd'
+        }
+      }))
+    };
+  }
+}
+
+</script>
+</body>
+</html>

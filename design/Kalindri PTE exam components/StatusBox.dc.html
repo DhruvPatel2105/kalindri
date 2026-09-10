@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#ffffff;border:1px solid #d6d3ca;border-radius:5px;padding:22px 24px 24px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:18px;box-shadow:0 1px 2px rgba(30,42,42,0.04)">
+  <div style="display:flex;align-items:baseline;gap:12px">
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Status:</span>
+    <span style="font-size:16px;font-weight:500;color:#1e2a2a">{{ statusLabel }}</span>
+  </div>
+  <div style="height:9px;border-radius:5px;background:#e9e6de;overflow:hidden">
+    <div style="{{ progressFillStyle }}"></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:460,&quot;height&quot;:140},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;idle&quot;,&quot;playing&quot;,&quot;completed&quot;],&quot;default&quot;:&quot;playing&quot;,&quot;tsType&quot;:&quot;'idle'|'playing'|'completed'&quot;},&quot;duration&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:12,&quot;min&quot;:2,&quot;max&quot;:90,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;autoRun&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;loop&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { t: 0, status: 'playing' };
+  get dur() { return Math.max(1, this.props.duration ?? 12); }
+  componentDidMount() {
+    const s = this.props.status ?? 'playing';
+    this.setState({ status: s, t: s === 'completed' ? this.dur : 0 });
+    this.iv = setInterval(() => this.tick(), 100);
+  }
+  componentDidUpdate(prev) {
+    if (prev.status !== this.props.status && this.props.status) {
+      const s = this.props.status;
+      this.setState({ status: s, t: s === 'completed' ? this.dur : 0 });
+    }
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.rst); }
+  tick() {
+    if (this.state.status !== 'playing' || (this.props.autoRun ?? true) === false) return;
+    const t = this.state.t + 0.1;
+    if (t >= this.dur) {
+      this.setState({ t: this.dur, status: 'completed' });
+      if (this.props.loop ?? true) {
+        this.rst = setTimeout(() => this.setState({ t: 0, status: 'playing' }), 1800);
+      }
+    } else {
+      this.setState({ t });
+    }
+  }
+  renderVals() {
+    const labels = { idle: 'Ready', playing: 'Playing', completed: 'Completed' };
+    const pct = this.state.status === 'completed' ? 100 : (this.state.t / this.dur) * 100;
+    return {
+      statusLabel: labels[this.state.status] || 'Ready',
+      progressFillStyle: { height: '100%', background: '#1f6f6b', borderRadius: '5px', width: pct + '%', transition: 'width 120ms linear' }
+    };
+  }
+}
+</script>
+</body>
+</html>

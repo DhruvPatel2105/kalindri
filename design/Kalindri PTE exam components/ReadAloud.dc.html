@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 40px;color:#1e2a2a">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Read Aloud</span>
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Speaking · Practice</span>
+  </div>
+
+  <div style="position:relative;margin:0 48px;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:38px 56px 44px;overflow:hidden">
+    <div style="position:relative;display:flex;flex-direction:column;gap:30px;max-width:1000px">
+      <p style="margin:0;font-size:17px;font-weight:600;line-height:1.5;text-wrap:pretty">Look at the text below. In 35 seconds, you must read this text aloud as naturally and as clearly as possible. You have 35 seconds to read aloud.</p>
+      <div style="border-left:3px solid #1f6f6b;background:#fafaf8;padding:26px 30px">
+        <p style="margin:0;font-size:21px;line-height:1.65;color:#1e2a2a;text-wrap:pretty">Municipal recycling programs depend far more on household sorting than on the machinery at the depot. When residents place the wrong material in a bin, entire loads are diverted to landfill, and the cost of that error is carried by the whole community rather than the individual household.</p>
+      </div>
+    </div>
+
+    <div style="position:relative;max-width:520px;margin-top:34px">
+      <dc-import name="RecordedAnswerBox" phase="countdown" countdown-from="{{ prepare }}" duration="{{ record }}" hint-size="100%,215px"></dc-import>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;margin:22px 48px 0">
+    <span style="font-size:13px;line-height:1.6;color:#7d8a88;max-width:560px">Scored on oral fluency, pronunciation and content. Speak in connected sentences — reading word by word lowers your fluency score.</span>
+    <button type="button" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 38px;height:46px;cursor:pointer" style-hover="background:#17544f;border-color:#17544f" style-active="background:#123f3b">Submit</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;prepareSeconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:35,&quot;min&quot;:5,&quot;max&quot;:60,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;recordSeconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:35,&quot;min&quot;:10,&quot;max&quot;:120,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      prepare: this.props.prepareSeconds ?? 35,
+      record: this.props.recordSeconds ?? 35
+    };
+  }
+}
+</script>
+</body>
+</html>

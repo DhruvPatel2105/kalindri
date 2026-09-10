@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:20px;width:100%;box-sizing:border-box">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Your recording</span>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+      <button type="button" onClick="{{ togglePlay }}" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:14px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;height:38px;padding:0 22px;cursor:pointer" style-hover="background:#17544f;border-color:#17544f">{{ playLabel }}</button>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5c6a68">{{ clock }}</span>
+    </div>
+  </div>
+  <div style="position:relative;display:flex;align-items:center;gap:2px;height:88px;padding:0 2px;background:#fafaf8;border:1px solid #eeebe3;border-radius:3px">
+    <sc-for list="{{ wave }}" as="bar" hint-placeholder-count="90">
+      <div style="{{ bar.style }}"></div>
+    </sc-for>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Word-level pronunciation</span>
+      <span style="font-size:13px;color:#5c6a68">{{ transcriptNote }}</span>
+    </div>
+    <p style="margin:0;font-size:19px;line-height:2.1;max-width:920px">
+      <sc-for list="{{ words }}" as="w" hint-placeholder-count="40">
+        <span style="{{ w.style }}">{{ w.text }} </span>
+      </sc-for>
+    </p>
+    <div style="display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+      <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5c6a68"><span style="width:22px;height:10px;border-radius:2px;background:#1f6f6b"></span>clear</span>
+      <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5c6a68"><span style="width:22px;height:10px;border-radius:2px;background:#b58b2a"></span>unclear</span>
+      <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5c6a68"><span style="width:22px;height:10px;border-radius:2px;background:#b0472f"></span>mispronounced</span>
+      <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5c6a68"><span style="width:22px;height:10px;border-radius:2px;background:#eeebe3;border:1px solid #cfccc2"></span>silence over 0.5s</span>
+      <span style="font-size:13px;color:#7d8a88">Click a word to hear just that word.</span>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:980,&quot;height&quot;:380},&quot;duration&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:34,&quot;min&quot;:5,&quot;max&quot;:120,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;transcriptNote&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;words&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;[string, number, string?][]&quot;},&quot;gaps&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;[number,number][]&quot;}}">
+class Component extends DCLogic {
+  state = { playing: false, pos: 0 };
+  componentDidMount() {
+    this.iv = setInterval(() => {
+      if (!this.state.playing) return;
+      const dur = this.props.duration ?? 34;
+      const pos = this.state.pos + 0.1;
+      if (pos >= dur) this.setState({ playing: false, pos: 0 });
+      else this.setState({ pos });
+    }, 100);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    const dur = this.props.duration ?? 34;
+    const gaps = this.props.gaps ?? [];
+    const n = 90;
+    const heights = Array.from({ length: n }, (_, i) => {
+      const a = Math.sin(i * 0.7) * Math.sin(i * 0.19 + 1.2);
+      const b = Math.sin(i * 2.3 + 0.5) * 0.3;
+      const inGap = gaps.some((g) => i > g[0] && i < g[1]);
+      const amp = inGap ? 0.06 : 0.35 + Math.abs(a + b) * 0.62;
+      return Math.max(4, Math.min(78, amp * 78));
+    });
+    const played = (this.state.pos / dur) * n;
+    const colours = ['#1f6f6b', '#b58b2a', '#b0472f'];
+    const s = Math.floor(this.state.pos % 60);
+    const durS = Math.floor(dur % 60);
+    const durM = Math.floor(dur / 60);
+    return {
+      playLabel: this.state.playing ? 'Pause' : 'Play my answer',
+      togglePlay: () => this.setState((st) => ({ playing: !st.playing })),
+      clock: '0:' + String(s).padStart(2, '0') + ' / ' + durM + ':' + String(durS).padStart(2, '0'),
+      transcriptNote: this.props.transcriptNote ?? '',
+      wave: heights.map((h, i) => ({
+        style: {
+          flex: '1 1 0', height: h + 'px', borderRadius: '1px',
+          background: i < played ? '#1f6f6b' : '#c9d6d4'
+        }
+      })),
+      words: (this.props.words ?? []).map((w) => {
+        const level = w[1] ?? 0;
+        const pause = w[2] === 'pause';
+        return {
+          text: w[0],
+          style: {
+            color: colours[level], cursor: 'pointer',
+            fontWeight: level ? 600 : 400,
+            borderBottom: level ? '2px solid ' + colours[level] : '2px solid transparent',
+            background: pause ? '#eeebe3' : level ? (level === 1 ? '#fbf3e3' : '#fbeee7') : 'transparent',
+            padding: '1px 2px',
+            outline: pause ? '1px solid #cfccc2' : 'none'
+          }
+        };
+      })
+    };
+  }
+}
+
+</script>
+</body>
+</html>

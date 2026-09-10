@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</helmet>
+<div style="{{ rowStyle }}">
+  <div style="display:flex;flex-direction:column;gap:4px;min-width:0">
+    <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap">
+      <span style="font-size:15.5px;font-weight:600;color:#1e2a2a">{{ nameText }}</span>
+      <span style="{{ recBadgeStyle }}">Recommended</span>
+    </div>
+    <span style="{{ subStyle }}">{{ subText }}</span>
+  </div>
+  <span style="{{ weightStyle }}">{{ weightLabel }}</span>
+  <span style="{{ accStyle }}">{{ accLabel }}</span>
+  <span style="{{ attemptStyle }}">{{ attemptLabel }}</span>
+  <button type="button" onClick="{{ onStart }}" style="{{ btnStyle }}" style-hover="{{ btnHover }}">Start</button>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:940,&quot;height&quot;:60},&quot;nameText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Write from Dictation&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;subText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Also scores into Listening&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;weightLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;22.3% of Writing&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;accuracy&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:61,&quot;min&quot;:0,&quot;max&quot;:100,&quot;tsType&quot;:&quot;number&quot;},&quot;attempts&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:5,&quot;min&quot;:0,&quot;max&quot;:200,&quot;tsType&quot;:&quot;number&quot;},&quot;recommended&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;onStart&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;() =&gt; void&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const attempts = this.props.attempts ?? 0;
+    const acc = this.props.accuracy;
+    const hasAcc = attempts >= 5 && typeof acc === 'number';
+    const rec = this.props.recommended ?? false;
+    const weak = hasAcc && acc < 70;
+    return {
+      nameText: this.props.nameText ?? '',
+      subText: this.props.subText ?? '',
+      weightLabel: this.props.weightLabel ?? '\u2014',
+      accLabel: hasAcc ? acc + '%' : (attempts === 0 ? 'Not started' : 'Needs more data'),
+      attemptLabel: attempts === 0 ? 'No attempts' : attempts + (attempts === 1 ? ' attempt' : ' attempts'),
+      onStart: this.props.onStart,
+      rowStyle: {
+        fontFamily: "'Libre Franklin',Helvetica,sans-serif",
+        display: 'grid',
+        gridTemplateColumns: 'minmax(0,1fr) 152px 128px 108px auto',
+        gap: '20px', alignItems: 'center', padding: '15px 18px',
+        background: rec ? '#eaf2f1' : '#ffffff',
+        border: '1px solid ' + (rec ? '#bcd6d3' : '#e6e2d9'),
+        borderRadius: '4px', boxSizing: 'border-box', width: '100%'
+      },
+      recBadgeStyle: {
+        display: rec ? 'inline-block' : 'none',
+        fontSize: '10px', fontWeight: 600, letterSpacing: '0.09em',
+        textTransform: 'uppercase', color: '#ffffff', background: '#1f6f6b',
+        borderRadius: '3px', padding: '3px 8px'
+      },
+      subStyle: {
+        display: this.props.subText ? 'block' : 'none',
+        fontSize: '12.5px', lineHeight: 1.5, color: '#5c6a68'
+      },
+      weightStyle: {
+        fontFamily: this.props.weightLabel ? "'IBM Plex Mono',monospace" : "'Libre Franklin',Helvetica,sans-serif",
+        fontSize: '13.5px', color: this.props.weightLabel ? '#1e2a2a' : '#9aa39f'
+      },
+      accStyle: {
+        fontFamily: hasAcc ? "'IBM Plex Mono',monospace" : "'Libre Franklin',Helvetica,sans-serif",
+        fontSize: hasAcc ? '15px' : '13px', fontWeight: 500,
+        color: hasAcc ? (weak ? '#8a6a1e' : '#1e2a2a') : '#7d8a88'
+      },
+      attemptStyle: {
+        fontSize: '13px',
+        color: attempts === 0 ? '#7d8a88' : '#5c6a68'
+      },
+      btnStyle: rec
+        ? { fontFamily: "'Libre Franklin',Helvetica,sans-serif", fontSize: '14px', fontWeight: 600, color: '#ffffff', background: '#1f6f6b', border: '1px solid #1f6f6b', borderRadius: '4px', padding: '9px 24px', cursor: 'pointer' }
+        : { fontFamily: "'Libre Franklin',Helvetica,sans-serif", fontSize: '14px', fontWeight: 600, color: '#1f6f6b', background: '#ffffff', border: '1px solid #cfccc2', borderRadius: '4px', padding: '9px 24px', cursor: 'pointer' },
+      btnHover: rec
+        ? 'background:#17544f;border-color:#17544f'
+        : 'border-color:#1f6f6b;background:#f2f6f5'
+    };
+  }
+}
+
+</script>
+</body>
+</html>

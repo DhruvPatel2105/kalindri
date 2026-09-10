@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;display:flex;flex-direction:column;gap:26px;width:100%;box-sizing:border-box">
+  <div style="border-left:3px solid #1f6f6b;background:#fafaf8;padding:26px 30px">
+    <p style="margin:0;font-size:17px;line-height:2.6;color:#283634">
+      <sc-for list="{{ segments }}" as="seg" hint-placeholder-count="5">
+        <span>{{ seg.text }}<span onDragOver="{{ seg.onDragOver }}" onDrop="{{ seg.onDrop }}" onClick="{{ seg.onClear }}" style="{{ seg.gapStyle }}">{{ seg.gapLabel }}</span></span>
+      </sc-for>
+    </p>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px">
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Word bank</span>
+    <div onDragOver="{{ onBankDragOver }}" onDrop="{{ onBankDrop }}" style="display:flex;flex-wrap:wrap;gap:10px;padding:18px;border-radius:4px;background:#f2f7f6;border:1px dashed #bfd6d3;min-height:64px;box-sizing:border-box">
+      <sc-for list="{{ bank }}" as="w" hint-placeholder-count="8">
+        <span draggable="true" onDragStart="{{ w.onDragStart }}" onDragEnd="{{ w.onDragEnd }}" style="{{ w.style }}">{{ w.text }}</span>
+      </sc-for>
+      <span style="{{ bankEmptyStyle }}">All words placed.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:420},&quot;parts&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string[]&quot;},&quot;words&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string[]&quot;}}">
+class Component extends DCLogic {
+  state = { placed: {}, dragging: null };
+  get parts() { return this.props.parts ?? []; }
+  get words() { return this.props.words ?? []; }
+  place(word, gapIndex) {
+    const placed = Object.assign({}, this.state.placed);
+    Object.keys(placed).forEach((k) => { if (placed[k] === word) delete placed[k]; });
+    if (gapIndex !== null) placed[gapIndex] = word;
+    this.setState({ placed, dragging: null });
+  }
+  renderVals() {
+    const parts = this.parts;
+    const placed = this.state.placed;
+    const used = Object.values(placed);
+    const gapCount = Math.max(0, parts.length - 1);
+    return {
+      segments: parts.map((text, i) => {
+        const isGap = i < gapCount;
+        const filled = placed[i];
+        return {
+          text,
+          gapLabel: filled || '\u00a0'.repeat(10),
+          onDragOver: (e) => e.preventDefault(),
+          onDrop: (e) => { e.preventDefault(); const w = e.dataTransfer.getData('text/plain'); if (w) this.place(w, i); },
+          onClear: () => { if (filled) this.place(filled, null); },
+          gapStyle: {
+            display: isGap ? 'inline-block' : 'none',
+            minWidth: '140px', margin: '0 6px', padding: '4px 12px',
+            textAlign: 'center', borderRadius: '3px',
+            fontWeight: filled ? 500 : 400,
+            color: filled ? '#173534' : '#7d8a88',
+            cursor: filled ? 'pointer' : 'default',
+            background: filled ? '#eaf2f1' : '#ffffff',
+            border: '1px solid ' + (filled ? '#1f6f6b' : '#a9c4c1'),
+            borderStyle: filled ? 'solid' : 'dashed'
+          }
+        };
+      }),
+      bank: this.words.filter((w) => !used.includes(w)).map((text) => ({
+        text,
+        onDragStart: (e) => { e.dataTransfer.setData('text/plain', text); this.setState({ dragging: text }); },
+        onDragEnd: () => this.setState({ dragging: null }),
+        style: {
+          fontSize: '16px', padding: '8px 16px', borderRadius: '4px', cursor: 'grab',
+          background: '#ffffff', border: '1px solid #cfccc2', color: '#1e2a2a',
+          opacity: this.state.dragging === text ? 0.5 : 1,
+          boxShadow: '0 1px 2px rgba(30,42,42,0.05)'
+        }
+      })),
+      bankEmptyStyle: { fontSize: '14px', color: '#9aa39f', display: used.length >= this.words.length ? 'block' : 'none' },
+      onBankDragOver: (e) => e.preventDefault(),
+      onBankDrop: (e) => { e.preventDefault(); const w = e.dataTransfer.getData('text/plain'); if (w) this.place(w, null); }
+    };
+  }
+}
+</script>
+</body>
+</html>

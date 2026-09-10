@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 40px;color:#1e2a2a">
+  <dc-import name="QuestionListPanel" dc-props="{{ panelProps }}" hint-size="48,48"></dc-import>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <div style="display:flex;align-items:baseline;gap:18px">
+      <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Write Email</span>
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Writing · Practice</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:14px">
+      <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Time remaining</span>
+      <span style="{{ timerStyle }}">{{ clock }}</span>
+    </div>
+  </div>
+
+  <div style="position:relative;margin:0 48px;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:38px 56px 44px;overflow:hidden">
+    <div style="position:relative;display:flex;flex-direction:column;gap:26px;max-width:1000px">
+      <p style="margin:0;font-size:17px;font-weight:600;line-height:1.5;text-wrap:pretty">Read a description of a situation. Then write an e-mail about the situation. You will have nine minutes. You should aim to write at least 100 words. Write using complete sentences.</p>
+
+      <p style="margin:0;font-size:16px;line-height:1.65;color:#283634;text-wrap:pretty">Your city has announced that the outdoor pool in your neighbourhood will stay closed for the coming winter so the budget can be spent elsewhere. You swim there regularly and you want the decision reconsidered. Write an email to Ms Tremblay, the parks program coordinator, giving three reasons the pool should remain open. <span style="color:#5c6a68">[~100 words]</span></p>
+
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <p style="margin:0;font-size:16px;line-height:1.65;color:#283634">Your ideas must come from the following three themes:</p>
+        <div style="display:flex;flex-direction:column;gap:8px;padding-left:34px">
+          <div style="display:flex;align-items:baseline;gap:14px"><span style="width:5px;height:5px;border-radius:50%;background:#1f6f6b;flex:0 0 auto;transform:translateY(-4px)"></span><span style="font-size:16px;line-height:1.5">children's swimming lessons</span></div>
+          <div style="display:flex;align-items:baseline;gap:14px"><span style="width:5px;height:5px;border-radius:50%;background:#1f6f6b;flex:0 0 auto;transform:translateY(-4px)"></span><span style="font-size:16px;line-height:1.5">the seniors' morning group</span></div>
+          <div style="display:flex;align-items:baseline;gap:14px"><span style="width:5px;height:5px;border-radius:50%;background:#1f6f6b;flex:0 0 auto;transform:translateY(-4px)"></span><span style="font-size:16px;line-height:1.5">the cost of reopening in spring</span></div>
+        </div>
+      </div>
+
+      <p style="margin:0;font-size:16px;line-height:1.65;color:#283634">You should include all three themes. Provide supporting ideas for your suggestions.</p>
+    </div>
+
+    <div style="position:relative;display:flex;flex-direction:column;gap:14px;margin-top:32px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+        <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Your response</span>
+        <span style="font-size:13px;color:#7d8a88">50–120 words for full Form marks · aim for ~100 words</span>
+      </div>
+      <textarea id="we-response" ref="{{ areaRef }}" onInput="{{ onInput }}" spellcheck="false" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:16px;line-height:1.7;color:#1e2a2a;background:#fdfdfc;border:1px solid #a9c4c1;border-radius:3px;padding:16px 20px;height:400px;width:100%;box-sizing:border-box;resize:vertical;outline:none" style-focus="border-color:#1f6f6b;box-shadow:0 0 0 3px rgba(31,111,107,0.12)">Dear Ms Tremblay,
+
+</textarea>
+      <dc-import name="TextEntryFooter" target-selector="#we-response" min-words="{{ minWords }}" max-words="{{ maxWords }}" hint-size="100%,90px"></dc-import>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;margin:22px 48px 0">
+    <span style="font-size:13px;line-height:1.6;color:#7d8a88;max-width:560px">Scored on content, form, grammar, vocabulary, spelling, organisation and email conventions. Estimated CLB bands, not official scores.</span>
+    <button type="button" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 38px;height:46px;cursor:pointer" style-hover="background:#17544f;border-color:#17544f" style-active="background:#123f3b">Submit</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;minutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:9,&quot;min&quot;:1,&quot;max&quot;:30,&quot;unit&quot;:&quot;min&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;minWords&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:50,&quot;min&quot;:10,&quot;max&quot;:200,&quot;tsType&quot;:&quot;number&quot;},&quot;maxWords&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:120,&quot;min&quot;:20,&quot;max&quot;:400,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  state = { left: 540, words: 0 };
+  constructor(p) { super(p); this.areaRef = React.createRef(); }
+  componentDidMount() {
+    this.setState({ left: (this.props.minutes ?? 9) * 60 });
+    this.iv = setInterval(() => {
+      this.setState((s) => ({ left: s.left > 0 ? s.left - 1 : 0 }));
+    }, 1000);
+    const el = this.areaRef.current;
+    if (el) {
+      const n = el.value.length;
+      el.setSelectionRange(n, n);
+    }
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    const panelProps = {
+      totalCount: 42,
+      currentId: 8,
+      questions: [
+        { id: 3, number: 3, title: 'Late library book fines', difficulty: 'easy', hasModel: true, attempted: true, attempts: 2, score: 13, max: 15, bookmarked: false },
+        { id: 8, number: 8, title: 'Community pool closure', difficulty: 'medium', hasModel: true, attempted: true, attempts: 3, score: 12, max: 15, bookmarked: true },
+        { id: 12, number: 12, title: 'Request adult ESL evening classes', difficulty: 'medium', hasModel: false, attempted: true, attempts: 1, score: 9, max: 15, bookmarked: false },
+        { id: 15, number: 15, title: 'Parking permit for new residents', difficulty: 'easy', hasModel: true, attempted: false, attempts: 0, score: 0, max: 15, bookmarked: false },
+        { id: 19, number: 19, title: 'Noise complaint from a neighbour', difficulty: 'hard', hasModel: true, attempted: true, attempts: 4, score: 8, max: 15, bookmarked: false },
+        { id: 22, number: 22, title: 'Child care subsidy details', difficulty: 'medium', hasModel: false, attempted: false, attempts: 0, score: 0, max: 15, bookmarked: true },
+        { id: 27, number: 27, title: 'School bus route change', difficulty: 'easy', hasModel: false, attempted: false, attempts: 0, score: 0, max: 15, bookmarked: false },
+        { id: 31, number: 31, title: 'Apartment elevator repair delay', difficulty: 'hard', hasModel: true, attempted: true, attempts: 2, score: 11, max: 15, bookmarked: false },
+        { id: 34, number: 34, title: 'Requesting a lease extension', difficulty: 'medium', hasModel: false, attempted: false, attempts: 0, score: 0, max: 15, bookmarked: false }
+      ]
+    };
+    const m = Math.floor(this.state.left / 60);
+    const s = this.state.left % 60;
+    const urgent = this.state.left <= 60;
+    return {
+      panelProps,
+      areaRef: this.areaRef,
+      minWords: this.props.minWords ?? 50,
+      maxWords: this.props.maxWords ?? 120,
+      clock: m + ':' + String(s).padStart(2, '0'),
+      timerStyle: {
+        fontFamily: "'IBM Plex Mono',monospace", fontSize: '24px', fontWeight: 500,
+        letterSpacing: '0.02em', padding: '5px 14px', borderRadius: '4px',
+        color: urgent ? '#8a3d24' : '#1e2a2a',
+        background: urgent ? '#fbeee7' : '#ffffff',
+        border: '1px solid ' + (urgent ? '#e2c3b5' : '#e2ded5')
+      },
+      onInput: (e) => {
+        const t = e.target.value.trim();
+        this.setState({ words: t ? t.split(/\s+/).length : 0 });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

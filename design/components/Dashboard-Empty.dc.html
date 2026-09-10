@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 56px;color:#1e2a2a">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;padding:22px 48px 6px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">{{ greeting }}</span>
+    <span style="font-size:13px;color:#7d8a88">Targeting CLB 9</span>
+  </div>
+  <div style="display:flex;gap:12px;padding:0 48px 26px">
+    <a href="#practice" style="font-size:14px;font-weight:600;text-decoration:none;color:#1e2a2a;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px;padding:11px 20px" style-hover="border-color:#1f6f6b;color:#1f6f6b">Practice</a>
+    <a href="#mock" style="font-size:14px;font-weight:600;text-decoration:none;color:#1e2a2a;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px;padding:11px 20px" style-hover="border-color:#1f6f6b;color:#1f6f6b">Mocks</a>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px;margin:0 48px">
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:36px 38px 34px;display:flex;flex-direction:column;gap:10px">
+      <span style="font-size:34px;font-weight:600;line-height:1.2;letter-spacing:-0.025em;color:#1e2a2a;max-width:840px;text-wrap:pretty">Your benchmark is set by your weakest skill, not your average.</span>
+      <span style="font-size:16px;line-height:1.7;color:#5c6a68;max-width:740px;text-wrap:pretty">So the first thing worth knowing is which of your four skills is furthest from CLB 9 &mdash; that one decides your result. Nothing here yet knows that about you. Two ways to find out:</span>
+    </div>
+
+    <div style="display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start">
+
+      <div style="background:#ffffff;border:1px solid #ddd9d0;border-left:5px solid #1f6f6b;border-radius:4px;padding:32px 34px 34px;display:flex;flex-direction:column;gap:22px">
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#ffffff;background:#1f6f6b;border-radius:3px;padding:5px 10px;align-self:flex-start">Recommended</span>
+          <span style="font-size:26px;font-weight:600;letter-spacing:-0.02em;color:#17544f;line-height:1.25">Take one full mock</span>
+          <span style="font-size:15px;line-height:1.7;color:#283634;text-wrap:pretty">A mock covers all four skills in one sitting, so it establishes a baseline everywhere at once. Every recommendation after it is built on your own data rather than a guess.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <sc-for list="{{ mockFacts }}" as="f" hint-placeholder-count="3">
+            <div style="display:flex;align-items:baseline;gap:12px">
+              <span style="width:5px;height:5px;border-radius:3px;background:#1f6f6b;flex:0 0 auto;position:relative;top:-3px"></span>
+              <span style="font-size:14.5px;line-height:1.6;color:#5c6a68">{{ f.text }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:11px;align-items:stretch">
+          <a href="#mock" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:16px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:16px 36px;text-decoration:none;text-align:center" style-hover="background:#17544f;border-color:#17544f">Start mock 1</a>
+          <span style="font-size:13px;line-height:1.6;color:#7d8a88;text-align:center">You'll do a mic and audio check first, as in the real exam.</span>
+        </div>
+      </div>
+
+      <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:32px 32px 34px;display:flex;flex-direction:column;gap:22px">
+        <div style="display:flex;flex-direction:column;gap:11px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Or start now</span>
+          <span style="font-size:22px;font-weight:600;letter-spacing:-0.015em;color:#1e2a2a;line-height:1.3">Three types that carry the most weight</span>
+          <span style="font-size:14.5px;line-height:1.65;color:#5c6a68;text-wrap:pretty">If two hours isn't in your day, these three move more score than any others. Five minutes each.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ starters }}" as="s" hint-placeholder-count="3">
+            <a href="#practice" style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:16px;align-items:center;padding:16px 18px;background:#fafaf8;border:1px solid #e6e2d9;border-radius:4px;text-decoration:none" style-hover="border-color:#1f6f6b;background:#f2f6f5">
+              <span style="display:flex;flex-direction:column;gap:4px;min-width:0">
+                <span style="font-size:16px;font-weight:600;color:#1e2a2a">{{ s.type }}</span>
+                <span style="font-size:13px;line-height:1.55;color:#5c6a68">{{ s.why }}</span>
+              </span>
+              <span style="font-size:14px;font-weight:600;color:#1f6f6b;white-space:nowrap">Start &#8594;</span>
+            </a>
+          </sc-for>
+        </div>
+        <span style="font-size:13px;line-height:1.6;color:#7d8a88;text-wrap:pretty">Weights are our derivation from published question counts, not official Pearson figures. <a href="#estimation" style="text-decoration:underline">How is this calculated?</a></span>
+      </div>
+    </div>
+
+    <div style="background:#fafaf8;border:1px solid #e6e2d9;border-radius:4px;padding:26px 30px;display:flex;flex-direction:column;gap:16px">
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">What appears here once you've practised</span>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ skeleton }}" as="k" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:112px 76px minmax(0,1fr) 216px;gap:22px;align-items:center;padding:17px 22px;background:#ffffff;border:1px solid #e6e2d9;border-left:3px solid #dedad0;border-radius:4px">
+            <span style="font-size:16px;font-weight:600;color:#5c6a68">{{ k.name }}</span>
+            <span style="font-size:15px;font-weight:600;color:#9aa39f">&mdash;</span>
+            <div style="display:flex;flex-direction:column;gap:9px;min-width:0">
+              <span style="font-size:14px;color:#7d8a88">Your estimated range</span>
+              <div style="height:8px;border-radius:4px;background:#eeebe3"></div>
+            </div>
+            <span style="font-size:14px;color:#7d8a88">Gap to CLB 9</span>
+          </div>
+        </sc-for>
+      </div>
+      <span style="font-size:13.5px;line-height:1.65;color:#5c6a68;max-width:720px;text-wrap:pretty">Each skill shows a CLB band, an estimated range and the gap to CLB 9 &mdash; after five attempts on its main task types. Below that, we say &ldquo;needs more data&rdquo; instead of guessing.</span>
+    </div>
+
+    <dc-import name="RealScoreCard" hint-size="100%,120px"></dc-import>
+
+    <dc-import name="EstimationPanel" open-by-default="{{ estimationOpen }}" hint-size="100%,90px"></dc-import>
+
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;studentName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Priya&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;estimationOpenByDefault&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      greeting: 'Welcome, ' + (this.props.studentName ?? 'Priya'),
+      estimationOpen: this.props.estimationOpenByDefault ?? false,
+      mockFacts: [
+        { text: 'All four skills scored, with an estimated CLB band for each' },
+        { text: 'Names your blocking skill immediately \u2014 the one setting your benchmark' },
+        { text: 'About two hours, run straight through with no pause, as in the real exam' }
+      ],
+      starters: [
+        { type: 'Repeat Sentence', why: 'Feeds both Speaking and Listening \u2014 the heaviest cross-skill task in the exam' },
+        { type: 'Read Aloud', why: 'Scores into Speaking and Reading at once' },
+        { type: 'Write from Dictation', why: 'Scores into Writing and Listening; usually where Writing is won' }
+      ],
+      skeleton: [
+        { name: 'Listening' }, { name: 'Reading' }, { name: 'Speaking' }, { name: 'Writing' }
+      ]
+    };
+  }
+}
+
+</script>
+</body>
+</html>

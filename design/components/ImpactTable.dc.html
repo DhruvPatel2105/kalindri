@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:26px 32px 28px;display:flex;flex-direction:column;gap:6px;width:100%;box-sizing:border-box">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Recommended practice</span>
+    <a href="#estimation" style="font-size:13px;text-decoration:underline">How is this calculated?</a>
+  </div>
+  <span style="font-size:15px;line-height:1.6;color:#283634;margin:6px 0 0">{{ leadText }}</span>
+
+  <sc-if value="{{ locked }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:18px;background:#fafaf8;border:1px solid #e6e2d9;border-radius:4px;padding:24px 26px;display:flex;flex-direction:column;gap:16px">
+      <span style="font-size:16px;font-weight:600;color:#1e2a2a">Practise 5 of these to unlock your ranking</span>
+      <span style="font-size:14px;line-height:1.65;color:#5c6a68;max-width:640px">Ranking needs 5 attempts per type before it means anything. Below 5 the accuracy figure moves too much to rank against, so these are listed by their weight in Writing only — not yet by impact for you.</span>
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 128px 150px auto;gap:20px;align-items:center;padding:13px 16px;background:#ffffff;border:1px solid #e6e2d9;border-radius:4px">
+            <span style="font-size:15px;font-weight:500;color:#1e2a2a">{{ r.type }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;color:#5c6a68">{{ r.weight }}</span>
+            <span style="{{ r.progressStyle }}">{{ r.progressLabel }}</span>
+            <a href="#practice" style="font-size:14px;font-weight:600;color:#1f6f6b;text-decoration:none;white-space:nowrap" style-hover="color:#17544f;text-decoration:underline">{{ r.action }}</a>
+          </div>
+        </sc-for>
+      </div>
+      <span style="{{ footNoteStyle }}">{{ footNote }}</span>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ ranked }}" hint-placeholder-val="{{ true }}">
+    <div style="margin-top:16px;display:flex;flex-direction:column">
+      <div style="display:grid;grid-template-columns:minmax(0,1.25fr) 112px 118px minmax(0,1.7fr) auto;gap:20px;padding:0 16px 10px;border-bottom:1px solid #e6e2d9">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Task type</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Weight</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">You're at</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Why it ranks here</span>
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Action</span>
+      </div>
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="4">
+        <div style="{{ r.rowStyle }}">
+          <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+            <span style="font-size:15px;font-weight:600;color:#1e2a2a">{{ r.type }}</span>
+            <span style="{{ r.badgeStyle }}">{{ r.badge }}</span>
+          </div>
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:15px;font-weight:500;color:#1e2a2a">{{ r.weight }}</span>
+          <span style="{{ r.accStyle }}">{{ r.accuracy }}</span>
+          <span style="font-size:13.5px;line-height:1.6;color:#5c6a68;text-wrap:pretty">{{ r.why }}</span>
+          <a href="#practice" style="{{ r.actionStyle }}" style-hover="{{ r.actionHover }}">{{ r.action }}</a>
+        </div>
+      </sc-for>
+      <span style="{{ footNoteStyle }}">{{ footNote }}</span>
+      <span style="font-size:13px;line-height:1.6;color:#7d8a88;margin-top:14px;max-width:760px">Ranked by weight in Writing &times; how much room is left &times; how confident we are in your accuracy. Weight is our derivation from published question counts and rubric maximums, not an official Pearson figure.</span>
+    </div>
+  </sc-if>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1040,&quot;height&quot;:460},&quot;rows&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{type:string,weight:string,accuracy?:string,why:string,action?:string,progress?:string}[]&quot;},&quot;locked&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;leadText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Because Writing is blocking your CLB, these are the Writing-scoring tasks worth your next hour.&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;footNote&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const locked = this.props.locked ?? false;
+    const raw = this.props.rows ?? [];
+    const rows = raw.map((r, i) => {
+      const top = !locked && i === 0;
+      const pending = !r.accuracy;
+      return {
+        type: r.type,
+        weight: r.weight,
+        why: r.why,
+        badge: top ? 'START HERE' : '',
+        accuracy: pending ? 'Needs 5 attempts' : r.accuracy,
+        progressLabel: r.progress ?? '',
+        action: r.action ?? (top ? 'Start' : 'Practise'),
+        rowStyle: {
+          display: 'grid',
+          gridTemplateColumns: 'minmax(0,1.25fr) 112px 118px minmax(0,1.7fr) auto',
+          gap: '20px', alignItems: 'center', padding: '18px 16px',
+          borderBottom: '1px solid #f0ede5',
+          background: top ? '#eaf2f1' : 'transparent',
+          borderRadius: top ? '4px' : 0
+        },
+        badgeStyle: {
+          display: top ? 'inline-block' : 'none', alignSelf: 'flex-start',
+          fontSize: '10px', fontWeight: 600, letterSpacing: '0.09em',
+          color: '#ffffff', background: '#1f6f6b', borderRadius: '3px', padding: '3px 8px'
+        },
+        accStyle: {
+          fontFamily: pending ? "'Libre Franklin',Helvetica,sans-serif" : "'IBM Plex Mono',monospace",
+          fontSize: pending ? '13px' : '15px', fontWeight: 500, lineHeight: 1.4,
+          color: pending ? '#9aa39f' : (parseInt(r.accuracy, 10) < 70 ? '#8a6a1e' : '#1e2a2a')
+        },
+        progressStyle: {
+          fontSize: '13px', fontWeight: 500,
+          color: (r.progress || '').indexOf('0 of') === 0 ? '#9aa39f' : '#8a6a1e'
+        },
+        actionStyle: top
+          ? { fontFamily: "'Libre Franklin',Helvetica,sans-serif", fontSize: '14px', fontWeight: 600, color: '#ffffff', background: '#1f6f6b', border: '1px solid #1f6f6b', borderRadius: '4px', padding: '9px 22px', textDecoration: 'none', whiteSpace: 'nowrap' }
+          : { fontSize: '14px', fontWeight: 600, color: '#1f6f6b', textDecoration: 'none', whiteSpace: 'nowrap' },
+        actionHover: top ? 'background:#17544f;border-color:#17544f' : 'color:#17544f;text-decoration:underline'
+      };
+    });
+    const footNote = this.props.footNote ?? '';
+    return {
+      rows, locked, ranked: !locked,
+      leadText: this.props.leadText ?? '',
+      footNote,
+      footNoteStyle: {
+        display: footNote ? 'block' : 'none',
+        fontSize: '13px', lineHeight: 1.6, color: '#5c6a68',
+        marginTop: '16px', maxWidth: '760px', textWrap: 'pretty'
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 40px;color:#1e2a2a">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Fill in the Blanks</span>
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Listening · Practice</span>
+  </div>
+
+  <div style="position:relative;margin:0 48px;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:38px 56px 44px;overflow:hidden">
+    <div style="position:relative;display:flex;flex-direction:column;gap:26px;max-width:1020px">
+      <p style="margin:0;font-size:17px;font-weight:600;line-height:1.5;text-wrap:pretty">You will hear a recording. Type the missing words in each blank.</p>
+
+      <div style="width:440px">
+        <dc-import name="StatusBox" status="playing" duration="{{ audio }}" loop="{{ off }}" hint-size="100%,130px"></dc-import>
+      </div>
+
+      <div style="border-left:3px solid #1f6f6b;background:#fafaf8;padding:26px 30px">
+        <p style="margin:0;font-size:17px;line-height:2.4;color:#283634">Volunteer firefighting departments cover roughly half of the country's land area, and recruitment has become their most persistent
+          <input type="text" style="font:inherit;font-size:16px;width:150px;padding:5px 10px;border:1px solid #a9c4c1;border-radius:3px;background:#ffffff;outline:none" style-focus="border-color:#1f6f6b;box-shadow:0 0 0 3px rgba(31,111,107,0.12)" /> . Training requirements have risen steadily, while the
+          <input type="text" style="font:inherit;font-size:16px;width:150px;padding:5px 10px;border:1px solid #a9c4c1;border-radius:3px;background:#ffffff;outline:none" style-focus="border-color:#1f6f6b;box-shadow:0 0 0 3px rgba(31,111,107,0.12)" /> available to most volunteers has not. Several municipalities now
+          <input type="text" style="font:inherit;font-size:16px;width:150px;padding:5px 10px;border:1px solid #a9c4c1;border-radius:3px;background:#ffffff;outline:none" style-focus="border-color:#1f6f6b;box-shadow:0 0 0 3px rgba(31,111,107,0.12)" /> a portion of that training time, which appears to
+          <input type="text" style="font:inherit;font-size:16px;width:150px;padding:5px 10px;border:1px solid #a9c4c1;border-radius:3px;background:#ffffff;outline:none" style-focus="border-color:#1f6f6b;box-shadow:0 0 0 3px rgba(31,111,107,0.12)" /> retention more than any recruitment campaign has.</p>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;margin:22px 48px 0">
+    <span style="font-size:13px;line-height:1.6;color:#7d8a88;max-width:560px">One mark per correct blank, with spelling counted. The audio plays once — type as you listen rather than waiting for the end.</span>
+    <button type="button" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 38px;height:46px;cursor:pointer" style-hover="background:#17544f;border-color:#17544f" style-active="background:#123f3b">Submit</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;audioSeconds&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:32,&quot;min&quot;:5,&quot;max&quot;:120,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return { audio: this.props.audioSeconds ?? 32, off: false };
+  }
+}
+</script>
+</body>
+</html>

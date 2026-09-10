@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 56px;color:#1e2a2a">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">{{ headingText }}</span>
+    <span style="font-size:13px;color:#7d8a88">{{ attemptLabel }}</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px;margin:0 48px">
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;align-items:center;gap:36px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Score</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:500;letter-spacing:-0.01em">{{ correct }}<span style="font-size:20px;color:#5c6a68">{{ totalSuffix }}</span></span>
+        <span style="font-size:13px;color:#5c6a68">{{ unitLabel }}</span>
+      </div>
+      <div style="width:1px;height:60px;background:#e6e2d9"></div>
+      <div style="display:flex;flex-direction:column;gap:5px;min-width:0;max-width:420px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Marked automatically</span>
+        <span style="font-size:14px;line-height:1.6;color:#283634;text-wrap:pretty">{{ deterministicNote }}</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-left:auto;align-items:flex-end">
+        <span style="font-size:13px;line-height:1.55;color:#5c6a68;text-align:right;max-width:260px">{{ weightNote }}</span>
+        <a href="PracticeSelection.dc.html" style="font-size:14px;font-weight:600;text-decoration:none" style-hover="text-decoration:underline">{{ weightAction }}</a>
+      </div>
+    </div>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:20px">
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Your answer against the correct answer</span>
+
+      <div style="{{ sequenceStyle }}">
+        <div style="display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:28px;align-items:start">
+          <div style="display:flex;flex-direction:column;gap:10px;min-width:0">
+            <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">The order you submitted</span>
+            <div style="display:flex;flex-direction:column;gap:0;min-width:0">
+              <sc-for list="{{ yourSequence }}" as="b" hint-placeholder-count="5">
+                <div style="display:flex;flex-direction:column;gap:0;min-width:0">
+                  <div style="{{ b.boxStyle }}">
+                    <span style="{{ b.tagStyle }}">{{ b.tag }}</span>
+                    <span style="font-size:14.5px;line-height:1.6;color:#283634;min-width:0;text-wrap:pretty">{{ b.text }}</span>
+                  </div>
+                  <div style="{{ b.linkStyle }}">
+                    <span style="{{ b.linkMarkStyle }}">{{ b.linkMark }}</span>
+                    <span style="{{ b.linkTextStyle }}">{{ b.linkText }}</span>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Correct order</span>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <sc-for list="{{ correctSequence }}" as="c" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#fafaf8;border:1px solid #e6e2d9;border-radius:4px">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;color:#ffffff;background:#5c6a68;border-radius:3px;padding:2px 7px">{{ c.tag }}</span>
+                  <span style="font-size:13px;line-height:1.5;color:#5c6a68">{{ c.hint }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style="{{ rowsStyle }}">
+        <div style="display:grid;grid-template-columns:88px minmax(0,1fr) minmax(0,1fr) 96px;gap:18px;padding:0 14px 8px;border-bottom:1px solid #e6e2d9">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Item</span>
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Your answer</span>
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Correct answer</span>
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Mark</span>
+        </div>
+        <sc-for list="{{ rows }}" as="r" hint-placeholder-count="5">
+          <div style="{{ r.rowStyle }}">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5c6a68">{{ r.label }}</span>
+            <span style="{{ r.yoursStyle }}">{{ r.yours }}</span>
+            <span style="font-size:14.5px;color:#283634">{{ r.correct }}</span>
+            <span style="{{ r.markStyle }}">{{ r.mark }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-left:3px solid #1f6f6b;border-radius:4px;padding:26px 32px;display:flex;flex-direction:column;gap:12px">
+      <span style="font-size:16px;font-weight:600;color:#17544f">{{ ruleTitle }}</span>
+      <span style="font-size:15px;line-height:1.75;color:#283634;max-width:860px;text-wrap:pretty">{{ ruleBody }}</span>
+      <div style="{{ ruleMathStyle }}">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;line-height:1.7;color:#283634">{{ ruleMath }}</span>
+      </div>
+      <span style="{{ ruleWarnStyle }}">{{ ruleWarn }}</span>
+    </div>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Compared with your own past attempts</span>
+        <span style="font-size:13px;color:#7d8a88">{{ historyMeta }}</span>
+      </div>
+      <div style="display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap">
+        <sc-for list="{{ history }}" as="h" hint-placeholder-count="2">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:104px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5c6a68">{{ h.label }}</span>
+            <div style="{{ h.barStyle }}"></div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500">{{ h.score }}</span>
+          </div>
+        </sc-for>
+        <span style="font-size:14.5px;line-height:1.65;color:#283634;margin-left:12px;max-width:400px;text-wrap:pretty">{{ historyNote }}</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <a href="PracticeSelection.dc.html" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#1f6f6b;background:#ffffff;border:1px solid #1f6f6b;border-radius:4px;padding:0 30px;height:46px;display:flex;align-items:center;text-decoration:none" style-hover="background:#eaf2f1">Practise this item again</a>
+      <a href="PracticeSelection.dc.html" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 30px;height:46px;display:flex;align-items:center;text-decoration:none" style-hover="background:#17544f;border-color:#17544f">{{ nextLabel }}</a>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;typeName&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Reorder Paragraph&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;attemptLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Attempt 2 \u00b7 9 September 2026&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;correct&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:3,&quot;min&quot;:0,&quot;max&quot;:50,&quot;tsType&quot;:&quot;number&quot;},&quot;total&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:4,&quot;min&quot;:1,&quot;max&quot;:50,&quot;tsType&quot;:&quot;number&quot;},&quot;unitLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;adjacent pairs correct&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;deterministicNote&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;weightNote&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;weightAction&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Practise this type \u2192&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ruleTitle&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;How this was scored&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ruleBody&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ruleMath&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;ruleWarn&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;yourSequence&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{tag:string,text:string,misplaced?:boolean,pairOk?:boolean,pairText?:string}[]&quot;},&quot;correctSequence&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{tag:string,hint:string}[]&quot;},&quot;rows&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{label:string,yours:string,correct:string,ok:boolean,penalty?:boolean}[]&quot;},&quot;history&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{label:string,correct:number,total?:number,current?:boolean}[]&quot;},&quot;historyMeta&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;historyNote&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;nextLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Next question&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const correct = this.props.correct ?? 0;
+    const total = this.props.total ?? 1;
+    const seq = this.props.yourSequence ?? [];
+    const rows = this.props.rows ?? [];
+    const history = this.props.history ?? [];
+    const ruleMath = this.props.ruleMath ?? '';
+    const ruleWarn = this.props.ruleWarn ?? '';
+
+    return {
+      headingText: (this.props.typeName ?? '') + ' \u2014 your result',
+      attemptLabel: this.props.attemptLabel ?? '',
+      correct: String(correct),
+      totalSuffix: '/' + total,
+      unitLabel: this.props.unitLabel ?? '',
+      deterministicNote: this.props.deterministicNote ?? 'This type is marked by rule, not by judgement \u2014 the same answer always scores the same. There is no examiner opinion in this number.',
+      weightNote: this.props.weightNote ?? '',
+      weightAction: this.props.weightAction ?? 'Practise this type \u2192',
+      ruleTitle: this.props.ruleTitle ?? '',
+      ruleBody: this.props.ruleBody ?? '',
+      ruleMath,
+      ruleMathStyle: {
+        display: ruleMath ? 'block' : 'none',
+        background: '#fafaf8', border: '1px solid #e6e2d9', borderRadius: '4px',
+        padding: '14px 18px', maxWidth: '860px', whiteSpace: 'pre-wrap'
+      },
+      ruleWarn,
+      ruleWarnStyle: {
+        display: ruleWarn ? 'block' : 'none',
+        fontSize: '14.5px', lineHeight: 1.7, color: '#8a6a1e',
+        fontWeight: 500, maxWidth: '860px', textWrap: 'pretty'
+      },
+
+      sequenceStyle: { display: seq.length ? 'block' : 'none' },
+      rowsStyle: {
+        display: rows.length ? 'flex' : 'none',
+        flexDirection: 'column'
+      },
+
+      yourSequence: seq.map((b, i) => {
+        const last = i === seq.length - 1;
+        const ok = b.pairOk;
+        return {
+          text: b.text,
+          tag: b.tag,
+          boxStyle: {
+            display: 'flex', alignItems: 'flex-start', gap: '12px',
+            padding: '14px 16px', borderRadius: '4px',
+            background: b.misplaced ? '#fbf3e3' : '#ffffff',
+            border: '1px solid ' + (b.misplaced ? '#e6d5ab' : '#e6e2d9')
+          },
+          tagStyle: {
+            fontFamily: "'IBM Plex Mono',monospace", fontSize: '12px', fontWeight: 500,
+            color: '#ffffff', borderRadius: '3px', padding: '3px 8px', flex: '0 0 auto',
+            background: b.misplaced ? '#b58b2a' : '#1f6f6b'
+          },
+          linkStyle: {
+            display: last ? 'none' : 'flex',
+            alignItems: 'center', gap: '9px', padding: '5px 0 5px 18px'
+          },
+          linkMark: ok ? '\u2713' : '\u2717',
+          linkMarkStyle: {
+            fontSize: '13px', fontWeight: 600, lineHeight: 1,
+            color: '#ffffff', borderRadius: '3px', padding: '3px 7px',
+            background: ok ? '#1f6f6b' : '#b0472f'
+          },
+          linkText: b.pairText,
+          linkTextStyle: {
+            fontSize: '13px', lineHeight: 1.5,
+            color: ok ? '#1f6f6b' : '#8a3d29', fontWeight: 500
+          }
+        };
+      }),
+      correctSequence: this.props.correctSequence ?? [],
+
+      rows: rows.map((r) => ({
+        label: r.label,
+        yours: r.yours,
+        correct: r.correct,
+        mark: r.ok ? '+1' : (r.penalty ? '\u22121' : '0'),
+        rowStyle: {
+          display: 'grid', gridTemplateColumns: '88px minmax(0,1fr) minmax(0,1fr) 96px',
+          gap: '18px', alignItems: 'center', padding: '13px 14px',
+          borderBottom: '1px solid #f0ede5',
+          background: r.ok ? 'transparent' : '#fdf8ef'
+        },
+        yoursStyle: {
+          fontSize: '14.5px', fontWeight: r.ok ? 400 : 500,
+          color: r.ok ? '#283634' : '#8a3d29'
+        },
+        markStyle: {
+          fontFamily: "'IBM Plex Mono',monospace", fontSize: '14px', fontWeight: 500,
+          color: r.ok ? '#1f6f6b' : (r.penalty ? '#b0472f' : '#7d8a88')
+        }
+      })),
+
+      historyMeta: this.props.historyMeta ?? '',
+      historyNote: this.props.historyNote ?? '',
+      history: history.map((h) => ({
+        label: h.label,
+        score: h.correct + '/' + (h.total ?? total),
+        barStyle: {
+          width: '36px',
+          height: Math.max(6, (h.correct / (h.total ?? total)) * 110) + 'px',
+          borderRadius: '3px 3px 0 0',
+          background: h.current ? '#1f6f6b' : '#c3cfcd'
+        }
+      })),
+      nextLabel: this.props.nextLabel ?? 'Next question'
+    };
+  }
+}
+
+</script>
+</body>
+</html>

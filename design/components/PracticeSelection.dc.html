@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 56px;color:#1e2a2a">
+
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;padding:22px 48px 6px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Practice</span>
+    <span style="font-size:13px;color:#7d8a88">34 attempts across 10 types &middot; Writing is your blocking skill</span>
+  </div>
+  <div style="display:flex;gap:12px;padding:0 48px 26px">
+    <a href="Dashboard-Full.dc.html" style="font-size:14px;font-weight:600;text-decoration:none;color:#1e2a2a;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px;padding:11px 20px" style-hover="border-color:#1f6f6b;color:#1f6f6b">&#8592; Dashboard</a>
+    <a href="#mock" style="font-size:14px;font-weight:600;text-decoration:none;color:#1e2a2a;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px;padding:11px 20px" style-hover="border-color:#1f6f6b;color:#1f6f6b">Take a mock</a>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px;margin:0 48px">
+
+    <dc-import name="ImpactTable" rows="{{ impactRows }}" lead-text="Because Writing is blocking your CLB, these are the Writing-scoring tasks worth your next hour." foot-note="{{ impactFootNote }}" hint-size="100%,520px"></dc-import>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:24px 32px;display:flex;flex-direction:column;gap:16px">
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Filters</span>
+        <span style="font-size:13px;line-height:1.6;color:#5c6a68">Sets which questions your drill draws from. It doesn't change the weights or your accuracy below.</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:9px">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Difficulty</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <sc-for list="{{ difficultyChips }}" as="c" hint-placeholder-count="4">
+            <button type="button" onClick="{{ c.onPick }}" style="{{ c.style }}" style-hover="{{ c.hover }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+        <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:24px 32px 28px;display:flex;flex-direction:column;gap:16px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;flex-wrap:wrap">
+            <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+              <span style="font-size:19px;font-weight:600;letter-spacing:-0.015em;color:#17544f">{{ g.skill }}</span>
+              <span style="{{ g.statusStyle }}">{{ g.statusLabel }}</span>
+            </div>
+            <span style="font-size:13px;color:#5c6a68">{{ g.countLabel }} &middot; ranked by weight</span>
+          </div>
+          <span style="{{ g.noteStyle }}">{{ g.note }}</span>
+          <div style="display:grid;grid-template-columns:minmax(0,1fr) 152px 128px 108px 92px;gap:20px;padding:0 18px 2px">
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Task type</span>
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Weight</span>
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Your accuracy</span>
+            <span style="font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Attempts</span>
+            <span></span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <sc-for list="{{ g.types }}" as="t" hint-placeholder-count="5">
+              <dc-import name="TypeRow" name-text="{{ t.name }}" sub-text="{{ t.sub }}" weight-label="{{ t.weight }}" accuracy="{{ t.accuracy }}" attempts="{{ t.attempts }}" recommended="{{ t.recommended }}" on-start="{{ t.onStart }}" hint-size="100%,60px"></dc-import>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <span style="font-size:13px;line-height:1.65;color:#5c6a68;max-width:820px;text-wrap:pretty">All 19 types are listed under every skill they score into, each with its weight in <em style="font-style:normal;font-weight:600">that</em> skill &mdash; so Read Aloud appears twice, at 28.9% of Speaking and 30.4% of Reading. Weights are our derivation from Pearson's published question counts and rubric maximums, not official Pearson figures. Accuracy is your own rubric-level history and appears once a type has five attempts. <a href="Dashboard-Full.dc.html#estimation" style="text-decoration:underline">How is this estimated?</a></span>
+
+  </div>
+
+  <div style="{{ overlayStyle }}" onClick="{{ closeDrill }}">
+    <div style="{{ modalStyle }}" onClick="{{ stopClose }}">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:24px">
+        <div style="display:flex;flex-direction:column;gap:6px;min-width:0">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Set up your drill</span>
+          <span style="font-size:26px;font-weight:600;letter-spacing:-0.02em;color:#1e2a2a">{{ drillName }}</span>
+          <span style="font-size:13.5px;line-height:1.6;color:#5c6a68">{{ drillSub }}</span>
+        </div>
+        <button type="button" onClick="{{ closeDrill }}" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:22px;line-height:1;color:#5c6a68;background:transparent;border:0;padding:4px 8px;cursor:pointer" style-hover="color:#1e2a2a">&times;</button>
+      </div>
+
+      <div style="height:1px;background:#f0ede5"></div>
+
+      <div style="display:flex;flex-direction:column;gap:11px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">How many questions</span>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <sc-for list="{{ lengthChips }}" as="c" hint-placeholder-count="4">
+            <button type="button" onClick="{{ c.onPick }}" style="{{ c.style }}" style-hover="{{ c.hover }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+        <span style="{{ lengthNoteStyle }}">{{ lengthNote }}</span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Difficulty</span>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <sc-for list="{{ difficultyChips }}" as="c" hint-placeholder-count="4">
+            <button type="button" onClick="{{ c.onPick }}" style="{{ c.style }}" style-hover="{{ c.hover }}">{{ c.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="background:#fafaf8;border:1px solid #e6e2d9;border-left:3px solid #1f6f6b;border-radius:4px;padding:16px 20px;display:flex;flex-direction:column;gap:6px">
+        <span style="font-size:14px;font-weight:600;color:#1e2a2a">{{ runSummary }}</span>
+        <span style="font-size:13px;line-height:1.6;color:#5c6a68;text-wrap:pretty">The drill runs straight through with no pause between questions, as in the real exam. Your results come at the end, not question by question.</span>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <a href="{{ drillHref }}" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:16px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:15px 34px;text-decoration:none" style-hover="background:#17544f;border-color:#17544f">{{ startLabel }}</a>
+        <button type="button" onClick="{{ closeDrill }}" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:14px;font-weight:600;color:#5c6a68;background:transparent;border:0;padding:8px 4px;cursor:pointer;text-decoration:underline" style-hover="color:#1e2a2a">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;runnerHref&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;#run&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+class Component extends DCLogic {
+  state = { open: null, length: null, difficulty: 'Any' };
+
+  data() {
+    // One registry entry per question type: the student's own history, shared across
+    // every skill the type scores into. Accuracy appears at >= 5 attempts.
+    const T = {
+      rs:    { name: 'Repeat Sentence', accuracy: 76, attempts: 5 },
+      ra:    { name: 'Read Aloud', accuracy: 81, attempts: 5 },
+      di:    { name: 'Describe Image', attempts: 1 },
+      rtas:  { name: 'Respond to a Situation', attempts: 0 },
+      asq:   { name: 'Answer Short Question', attempts: 0 },
+      email: { name: 'Write Email', accuracy: 78, attempts: 5 },
+      wfd:   { name: 'Write from Dictation', accuracy: 61, attempts: 5 },
+      rwfib: { name: 'R&W Fill in the Blanks', accuracy: 69, attempts: 5 },
+      lfib:  { name: 'Listening Fill in the Blanks', accuracy: 84, attempts: 5 },
+      sst:   { name: 'Summarize Spoken Text', attempts: 1 },
+      swt:   { name: 'Summarize Written Text', attempts: 0 },
+      rfib:  { name: 'Reading Fill in the Blanks', attempts: 1 },
+      rop:   { name: 'Reorder Paragraph', attempts: 1 },
+      hiw:   { name: 'Highlight Incorrect Words', attempts: 0 },
+      smw:   { name: 'Select Missing Word', attempts: 0 },
+      rmcm:  { name: 'Multiple Choice, Multiple Answers', attempts: 0 },
+      rmcs:  { name: 'Multiple Choice, Single Answer', attempts: 0 },
+      lmcm:  { name: 'Multiple Choice, Multiple Answers', attempts: 0 },
+      lmcs:  { name: 'Multiple Choice, Single Answer', attempts: 0 }
+    };
+
+    // 02-scoring-spec.md §10, derived model. Ranked by weight within each skill.
+    const shape = [
+      { skill: 'Speaking', status: 'CLB 9 met', weights: [
+        ['rs', 42.4], ['ra', 28.9], ['di', 15.6], ['rtas', 11.6], ['asq', 1.6]
+      ] },
+      { skill: 'Writing', status: 'Blocking \u2014 CLB 8', recommend: ['wfd', 'rwfib'], weights: [
+        ['email', 26.6], ['wfd', 22.3], ['rwfib', 19.5], ['lfib', 12.4], ['sst', 10.6], ['swt', 8.5]
+      ] },
+      { skill: 'Reading', status: 'CLB 9 met, on the floor', weights: [
+        ['ra', 30.4], ['rwfib', 25.8], ['rfib', 21.1], ['rop', 9.4], ['swt', 5.6],
+        ['rmcm', 3.5], ['hiw', 2.8], ['rmcs', 1.4]
+      ] },
+      { skill: 'Listening', status: 'CLB 9 met', weights: [
+        ['rs', 30.6], ['wfd', 29.2], ['lfib', 16.2], ['sst', 7.0], ['hiw', 5.6],
+        ['asq', 5.1], ['lmcm', 3.5], ['lmcs', 1.4], ['smw', 1.4]
+      ] }
+    ];
+
+    // Which other skills each type scores into — shown as row sub-text.
+    const others = {};
+    shape.forEach((g) => g.weights.forEach(([k]) => {
+      others[k] = others[k] || [];
+      if (others[k].indexOf(g.skill) === -1) others[k].push(g.skill);
+    }));
+
+    const notes = {
+      Speaking: '',
+      Writing: 'Four of these six also score into another skill, so Writing practice is rarely wasted elsewhere.',
+      Reading: 'Your Reading estimate starts exactly on its CLB 9 floor, so practice here protects a band you already hold. Read Aloud and R&W Fill in the Blanks carry more than half of Reading between them.',
+      Listening: 'Repeat Sentence and Write from Dictation carry nearly 60% of Listening between them \u2014 both are Speaking or Writing tasks you may already be drilling.'
+    };
+
+    return shape.map((g) => ({
+      skill: g.skill,
+      status: g.status,
+      note: notes[g.skill],
+      types: g.weights.map(([k, w]) => {
+        const also = (others[k] || []).filter((s) => s !== g.skill);
+        return Object.assign({}, T[k], {
+          key: k + '@' + g.skill,
+          base: k,
+          weight: w.toFixed(1) + '% of ' + g.skill,
+          sub: also.length ? 'Also scores into ' + also.join(' and ') : '',
+          recommended: (g.recommend || []).indexOf(k) !== -1
+        });
+      })
+    }));
+  }
+
+  lengthsFor(key) {
+    const long = ['rs', 'ra', 'wfd', 'asq', 'smw'];
+    const capped = ['email', 'swt', 'sst', 'di', 'rtas'];
+    if (long.indexOf(key) !== -1) return { opts: [5, 10, 20, 50], note: '' };
+    if (capped.indexOf(key) !== -1) return { opts: [1, 3, 5], note: 'Capped at 5 \u2014 each answer is long-form and scored against the full rubric, so longer runs are not useful practice.' };
+    return { opts: [5, 10, 20], note: 'Run lengths for this type are provisional \u2014 not yet specified.' };
+  }
+
+  chip(label, active, onPick) {
+    return {
+      label, onPick,
+      style: {
+        fontFamily: "'Libre Franklin',Helvetica,sans-serif", fontSize: '13.5px',
+        fontWeight: active ? 600 : 500, cursor: 'pointer',
+        color: active ? '#ffffff' : '#1e2a2a',
+        background: active ? '#1f6f6b' : '#ffffff',
+        border: '1px solid ' + (active ? '#1f6f6b' : '#cfccc2'),
+        borderRadius: '999px', padding: '8px 17px'
+      },
+      hover: active ? 'background:#17544f;border-color:#17544f' : 'border-color:#1f6f6b;background:#f2f6f5'
+    };
+  }
+
+  renderVals() {
+    const groups = this.data();
+    const openKey = this.state.open;
+    let openType = null;
+    groups.forEach((g) => g.types.forEach((t) => { if (t.key === openKey) openType = Object.assign({}, t, { skill: g.skill }); }));
+
+    const cfg = openType ? this.lengthsFor(openType.base) : { opts: [], note: '' };
+    const length = this.state.length && cfg.opts.indexOf(this.state.length) !== -1
+      ? this.state.length
+      : cfg.opts[cfg.opts.length - 1];
+
+    return {
+      impactFootNote: 'Reading & Writing: Fill in the Blanks is 19.5% of Writing and 25.8% of Reading, so practice there also protects Reading \u2014 the skill closest to slipping.',
+      impactRows: [
+        { type: 'Write from Dictation', weight: '22.3% of Writing', accuracy: '61%', why: 'Second-heaviest task and your lowest accuracy in Writing. Weight \u00d7 headroom scores 8.7 \u2014 the highest on this list.', action: 'Start' },
+        { type: 'R&W Fill in the Blanks', weight: '19.5% of Writing', accuracy: '69%', why: 'Third-heaviest, and 31% still to recover puts it just ahead of Write Email at 6.0.', action: 'Practise' },
+        { type: 'Write Email', weight: '26.6% of Writing', accuracy: '78%', why: 'The heaviest Writing task, but at 78% there is less left to recover \u2014 5.9, so it ranks third despite the weight.', action: 'Practise' },
+        { type: 'Listening Fill in the Blanks', weight: '12.4% of Writing', accuracy: '84%', why: 'Moderate share and you are already strong \u2014 2.0, the smallest real gain of the four ranked here.', action: 'Practise' },
+        { type: 'Summarize Spoken Text', weight: '10.6% of Writing', why: 'One attempt so far. Ranking is held until five, because accuracy this early moves too much to trust.', action: 'Practise' }
+      ],
+
+      groups: groups.map((g) => {
+        const started = g.types.filter((t) => (t.attempts ?? 0) > 0).length;
+        const blocking = g.skill === 'Writing';
+        const onFloor = g.skill === 'Reading';
+        return {
+          skill: g.skill,
+          statusLabel: g.status,
+          countLabel: g.types.length + ' types \u00b7 ' + started + ' started',
+          note: g.note,
+          statusStyle: {
+            fontSize: '12px', fontWeight: 600, letterSpacing: '0.02em',
+            padding: '4px 10px', borderRadius: '3px',
+            color: blocking || onFloor ? '#8a6a1e' : '#17544f',
+            background: blocking || onFloor ? '#fbf3e3' : '#eaf2f1',
+            border: '1px solid ' + (blocking || onFloor ? '#e6d5ab' : '#bcd6d3')
+          },
+          noteStyle: {
+            display: g.note ? 'block' : 'none',
+            fontSize: '13px', lineHeight: 1.6, color: '#5c6a68',
+            maxWidth: '820px', textWrap: 'pretty'
+          },
+          types: g.types.map((t) => Object.assign({}, t, {
+            recommended: t.recommended ?? false,
+            onStart: () => this.setState({ open: t.key, length: null })
+          }))
+        };
+      }),
+
+      difficultyChips: ['Any', 'Easy', 'Medium', 'Hard'].map((d) =>
+        this.chip(d, this.state.difficulty === d, () => this.setState({ difficulty: d }))),
+      lengthChips: cfg.opts.map((n) =>
+        this.chip(n === 1 ? '1 question' : n + ' questions', length === n, () => this.setState({ length: n }))),
+
+      lengthNote: cfg.note,
+      lengthNoteStyle: {
+        display: cfg.note ? 'block' : 'none',
+        fontSize: '13px', lineHeight: 1.6, color: '#5c6a68',
+        maxWidth: '600px', textWrap: 'pretty'
+      },
+
+      drillName: openType ? openType.name : '',
+      drillSub: openType
+        ? openType.skill + ((openType.attempts ?? 0) >= 5
+            ? ' \u00b7 you are at ' + openType.accuracy + '% across ' + openType.attempts + ' attempts'
+            : (openType.attempts ?? 0) === 0
+              ? ' \u00b7 first time \u2014 no accuracy yet'
+              : ' \u00b7 ' + openType.attempts + ' of 5 attempts before accuracy appears')
+        : '',
+      startLabel: 'Start ' + (length ?? '') + '-question drill',
+      drillHref: openType ? (this.props.runnerHref ?? '#run') : '#run',
+      runSummary: length
+        ? length + (length === 1 ? ' question' : ' questions') + ' \u00b7 ' + this.state.difficulty.toLowerCase() + ' difficulty'
+        : '',
+
+      closeDrill: () => this.setState({ open: null, length: null }),
+      stopClose: (e) => e.stopPropagation(),
+      overlayStyle: {
+        display: openType ? 'flex' : 'none',
+        position: 'fixed', inset: 0, zIndex: 40,
+        background: 'rgba(30,42,42,0.45)',
+        alignItems: 'flex-start', justifyContent: 'center',
+        padding: '64px 24px', overflowY: 'auto'
+      },
+      modalStyle: {
+        fontFamily: "'Libre Franklin',Helvetica,sans-serif",
+        background: '#ffffff', border: '1px solid #ddd9d0', borderRadius: '5px',
+        boxShadow: '0 18px 48px rgba(30,42,42,0.22)',
+        padding: '32px 36px 34px', width: '100%', maxWidth: '640px',
+        display: 'flex', flexDirection: 'column', gap: '24px', boxSizing: 'border-box'
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 40px;color:#1e2a2a">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Fill in the Blanks</span>
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Reading · Practice</span>
+  </div>
+
+  <div style="position:relative;margin:0 48px;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:38px 56px 44px;overflow:hidden">
+    <div style="position:relative;display:flex;flex-direction:column;gap:26px;max-width:1020px">
+      <p style="margin:0;font-size:17px;font-weight:600;line-height:1.5;text-wrap:pretty">In the text below some words are missing. Drag words from the box below to the appropriate place in the text. To undo an answer choice, drag the word back to the box below the text.</p>
+      <dc-import name="WordBankBlanks" parts="{{ parts }}" words="{{ words }}" hint-size="100%,420px"></dc-import>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;margin:22px 48px 0">
+    <span style="font-size:13px;line-height:1.6;color:#7d8a88;max-width:560px">There are more words than gaps. One mark per correct placement, nothing deducted for a wrong one — fill every gap.</span>
+    <button type="button" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 38px;height:46px;cursor:pointer" style-hover="background:#17544f;border-color:#17544f" style-active="background:#123f3b">Submit</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      parts: [
+        'Community food programs in northern towns face a problem that southern ones rarely',
+        '. Shipping costs mean a case of milk can cost three times what it does in the nearest city, so a program that simply buys and',
+        ' groceries runs out of money long before it runs out of demand. The organisations that have lasted longest tend to have',
+        ' their model instead: they buy in bulk with neighbouring communities, share freight, and treat the transport contract as the real',
+        ' rather than the food itself.'
+      ],
+      words: ['encounter', 'distributes', 'restructured', 'expense', 'delivers', 'abandoned', 'shortage', 'purchase']
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+@keyframes kal-pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(.82); } }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#eaf2f1;border:1px solid #bfd6d3;border-left:3px solid #1f6f6b;border-radius:5px;padding:20px 24px 24px;width:100%;box-sizing:border-box;display:flex;flex-direction:column;gap:18px">
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding-bottom:14px;border-bottom:1px solid #cfe0dd">
+    <div style="{{ dotStyle }}"></div>
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#1f6f6b">Recorded Answer</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:6px">
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Current Status:</span>
+    <span style="font-size:17px;font-weight:500;color:#173534">{{ statusLabel }}</span>
+  </div>
+  <div style="height:9px;border-radius:5px;background:#dbe7e5;border:1px solid #cbdcd9;box-sizing:border-box;overflow:hidden">
+    <div style="{{ fillStyle }}"></div>
+  </div>
+  <span style="font-size:12px;color:#6b7a78;font-family:'IBM Plex Mono',monospace">{{ meta }}</span>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:420,&quot;height&quot;:230},&quot;phase&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;countdown&quot;,&quot;recording&quot;,&quot;completed&quot;],&quot;default&quot;:&quot;countdown&quot;,&quot;tsType&quot;:&quot;'countdown'|'recording'|'completed'&quot;},&quot;countdownFrom&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:8,&quot;min&quot;:1,&quot;max&quot;:40,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;duration&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:40,&quot;min&quot;:5,&quot;max&quot;:120,&quot;unit&quot;:&quot;s&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;autoRun&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;loop&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { phase: 'countdown', t: 0 };
+  get lead() { return Math.max(1, this.props.countdownFrom ?? 8); }
+  get dur() { return Math.max(1, this.props.duration ?? 40); }
+  get startPhase() { return this.props.phase ?? 'countdown'; }
+  componentDidMount() {
+    this.reset(this.startPhase);
+    this.iv = setInterval(() => this.tick(), 100);
+  }
+  componentDidUpdate(prev) {
+    if (prev.phase !== this.props.phase && this.props.phase) this.reset(this.props.phase);
+  }
+  componentWillUnmount() { clearInterval(this.iv); clearTimeout(this.rst); }
+  reset(phase) {
+    clearTimeout(this.rst);
+    this.setState({ phase, t: phase === 'completed' ? this.dur : 0 });
+  }
+  tick() {
+    if ((this.props.autoRun ?? true) === false) return;
+    const p = this.state.phase;
+    if (p === 'completed') return;
+    const t = this.state.t + 0.1;
+    if (p === 'countdown') {
+      if (t >= this.lead) this.setState({ phase: 'recording', t: 0 });
+      else this.setState({ t });
+      return;
+    }
+    if (t >= this.dur) {
+      this.setState({ phase: 'completed', t: this.dur });
+      if (this.props.loop ?? true) this.rst = setTimeout(() => this.reset(this.startPhase), 2000);
+    } else {
+      this.setState({ t });
+    }
+  }
+  renderVals() {
+    const { phase, t } = this.state;
+    const left = Math.max(1, Math.ceil(this.lead - t));
+    const pct = phase === 'countdown' ? 0 : phase === 'completed' ? 100 : (t / this.dur) * 100;
+    const label = phase === 'countdown' ? 'Beginning in ' + left + ' seconds.' : phase === 'recording' ? 'Recording' : 'Completed';
+    const secsLeft = Math.max(0, Math.ceil(this.dur - t));
+    const meta = phase === 'recording'
+      ? secsLeft + 's remaining'
+      : phase === 'countdown' ? this.dur + 's to answer'
+      : this.startPhase === 'recording' ? 'Answer saved — microphone closed' : 'Answer saved';
+    return {
+      statusLabel: label,
+      meta,
+      fillStyle: { height: '100%', background: phase === 'recording' ? '#1f6f6b' : '#88a8a4', width: pct + '%', transition: 'width 120ms linear' },
+      dotStyle: {
+        width: '9px', height: '9px', borderRadius: '50%',
+        background: phase === 'recording' ? '#b0472f' : '#9db3b0',
+        animation: phase === 'recording' ? 'kal-pulse 1.1s ease-in-out infinite' : 'none'
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

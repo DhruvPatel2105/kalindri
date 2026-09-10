@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 40px;color:#1e2a2a">
+  <dc-import name="QuestionListPanel" dc-props="{{ panelProps }}" hint-size="48,48"></dc-import>
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Multiple Choice, Multiple Answers</span>
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Reading · Practice</span>
+  </div>
+
+  <div style="position:relative;margin:0 48px;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:38px 56px 44px;overflow:hidden">
+    <div style="position:relative;display:flex;flex-direction:column;gap:26px;max-width:1020px">
+      <p style="margin:0;font-size:17px;font-weight:600;line-height:1.5;text-wrap:pretty">Read the text and answer the question by selecting all the correct responses. More than one response is correct.</p>
+
+      <div style="border-left:3px solid #1f6f6b;background:#fafaf8;padding:24px 28px">
+        <p style="margin:0;font-size:16px;line-height:1.7;color:#283634;text-wrap:pretty">Municipal transit agencies across the country have begun replacing paper transfers with tap-card systems, and the shift has produced an unexpected benefit. Because each tap records a boarding location and time, planners can finally see where riders actually travel rather than where surveys suggest they travel. Several agencies have rerouted low-ridership buses on the strength of this data within a single budget cycle. The privacy trade-off is real, however, and at least two provinces now require that boarding records be aggregated within days rather than retained per rider.</p>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <p style="margin:0;font-size:16px;font-weight:600;line-height:1.6">According to the text, which of the following are consequences of tap-card systems?</p>
+        <div style="max-width:820px">
+          <dc-import name="McqOptionList" options="{{ optionTexts }}" multi="{{ multi }}" on-change="{{ onChange }}" hint-size="100%,300px"></dc-import>
+        </div>
+        <span style="font-size:13px;color:#7d8a88">Incorrect selections subtract marks. Select only what the text states.</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;margin:22px 48px 0">
+    <span style="font-size:13px;line-height:1.6;color:#7d8a88;max-width:560px">{{ selectionSummary }}</span>
+    <button type="button" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 38px;height:46px;cursor:pointer" style-hover="background:#17544f;border-color:#17544f" style-active="background:#123f3b">Submit</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { picked: [] };
+  renderVals() {
+    const optionTexts = [
+      'Planners gained data on real boarding patterns rather than reported ones.',
+      'Paper transfers were shown to be more accurate than tap records.',
+      'Some agencies rerouted buses with low ridership.',
+      'Provinces have introduced limits on how boarding records are retained.',
+      'Transit fares fell in the provinces that adopted the systems.'
+    ];
+    const picked = this.state.picked;
+    const panelProps = {
+      totalCount: 36,
+      currentId: 3,
+      questions: [
+        { id: 3, number: 3, title: 'Municipal transit tap-cards', difficulty: 'medium', hasModel: false, attempted: true, attempts: 2, score: 4, max: 5, bookmarked: false },
+        { id: 7, number: 7, title: 'Library Sunday hours', difficulty: 'easy', hasModel: false, attempted: true, attempts: 1, score: 5, max: 5, bookmarked: true },
+        { id: 11, number: 11, title: 'Flood mapping funding', difficulty: 'hard', hasModel: false, attempted: false, attempts: 0, score: 0, max: 4, bookmarked: false },
+        { id: 14, number: 14, title: 'Rural EV charger rollout', difficulty: 'medium', hasModel: false, attempted: true, attempts: 3, score: 3, max: 5, bookmarked: false },
+        { id: 18, number: 18, title: 'Volunteer firefighter recruitment', difficulty: 'easy', hasModel: false, attempted: false, attempts: 0, score: 0, max: 4, bookmarked: false },
+        { id: 21, number: 21, title: 'Foreign credential recognition', difficulty: 'hard', hasModel: false, attempted: true, attempts: 1, score: 2, max: 5, bookmarked: false },
+        { id: 25, number: 25, title: 'Waterfront redevelopment history', difficulty: 'medium', hasModel: false, attempted: false, attempts: 0, score: 0, max: 5, bookmarked: true },
+        { id: 29, number: 29, title: 'Rural broadband take-up', difficulty: 'medium', hasModel: false, attempted: false, attempts: 0, score: 0, max: 4, bookmarked: false },
+        { id: 33, number: 33, title: 'Community food program costs', difficulty: 'hard', hasModel: false, attempted: true, attempts: 2, score: 3, max: 5, bookmarked: false }
+      ]
+    };
+    return {
+      panelProps,
+      optionTexts,
+      multi: true,
+      onChange: (next) => this.setState({ picked: next }),
+      selectionSummary: picked.length === 0
+        ? 'Nothing selected yet.'
+        : picked.length + (picked.length === 1 ? ' option selected.' : ' options selected.')
+    };
+  }
+}
+</script>
+</body>
+</html>

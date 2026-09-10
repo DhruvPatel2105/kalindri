@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:18px;width:100%;box-sizing:border-box">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:20px;flex-wrap:wrap">
+    <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Per-trait feedback</span>
+    <span style="font-size:13px;color:#5c6a68">One fix and one thing you did well, per trait</span>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <sc-for list="{{ items }}" as="f" hint-placeholder-count="4">
+      <div style="display:flex;flex-direction:column;gap:7px;padding-bottom:16px;border-bottom:1px solid #f0ede5">
+        <div style="display:flex;align-items:baseline;gap:12px;flex-wrap:wrap">
+          <span style="font-size:15px;font-weight:600;color:#1e2a2a">{{ f.name }}</span>
+          <span style="{{ f.scoreStyle }}">{{ f.scoreLabel }}</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#8a6a1e;background:#fbf3e3;border-radius:3px;padding:3px 8px;flex:0 0 auto;margin-top:2px">Fix</span>
+          <span style="font-size:15px;line-height:1.7;color:#283634;text-wrap:pretty">{{ f.fix }}</span>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:10px">
+          <span style="font-size:11px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#17544f;background:#eaf2f1;border-radius:3px;padding:3px 8px;flex:0 0 auto;margin-top:2px">Kept</span>
+          <span style="font-size:15px;line-height:1.7;color:#283634;text-wrap:pretty">{{ f.good }}</span>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:980,&quot;height&quot;:420},&quot;items&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{name:string,score?:number,max?:number,fix:string,good:string}[]&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      items: (this.props.items ?? []).map((f) => ({
+        name: f.name,
+        fix: f.fix,
+        good: f.good,
+        scoreLabel: typeof f.score === 'number' ? f.score + '/' + f.max : '',
+        scoreStyle: {
+          display: typeof f.score === 'number' ? 'inline' : 'none',
+          fontFamily: "'IBM Plex Mono',monospace", fontSize: '13px', fontWeight: 500,
+          color: f.score / f.max < 0.6 ? '#8a6a1e' : '#5c6a68'
+        }
+      }))
+    };
+  }
+}
+
+</script>
+</body>
+</html>

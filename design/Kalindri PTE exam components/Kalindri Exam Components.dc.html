@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #efece6; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;color:#1e2a2a;padding:48px 48px 80px;display:flex;flex-direction:column;gap:44px;width:1220px;box-sizing:border-box">
+  <div style="display:flex;flex-direction:column;gap:10px;max-width:760px">
+    <span style="font-size:12px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#7d8a88">Kalindri · Exam components</span>
+    <h1 style="margin:0;font-size:34px;font-weight:600;letter-spacing:-0.02em">Nine components, nineteen question types</h1>
+    <p style="margin:0;font-size:15px;line-height:1.7;color:#4d5b59;text-wrap:pretty">Every screen is built from the components below. Same positions and behaviour as the real exam; teal-on-warm-paper palette so it reads as Kalindri. Everything here is live — the timers tick, the countdown rolls into Recording, the word banks and transcripts respond.</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">StatusBox</span>
+      <span style="font-size:14px;color:#5c6a68">Appears whenever audio or video plays. Bordered white card, status line and playback progress. No volume — that lives on its own.</span>
+    </div>
+    <div style="display:flex;gap:24px;align-items:start;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:10px;width:440px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Playing</span>
+        <dc-import name="StatusBox" status="playing" duration="{{ twelve }}" hint-size="100%,130px"></dc-import>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;width:440px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Completed</span>
+        <dc-import name="StatusBox" status="completed" auto-run="{{ off }}" loop="{{ off }}" hint-size="100%,130px"></dc-import>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">VolumeControl</span>
+      <span style="font-size:14px;color:#5c6a68">Pulled out of the Status box so it can sit in the exam chrome or a settings row. Round handle, drag or click the track.</span>
+    </div>
+    <div style="width:440px">
+      <dc-import name="VolumeControl" hint-size="100%,50px"></dc-import>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">RecordedAnswerBox</span>
+      <span style="font-size:14px;color:#5c6a68">Appears when the student speaks. Tinted panel with an accent edge and a live indicator, so it never reads as the same box as playback.</span>
+    </div>
+    <div style="display:flex;gap:24px;align-items:start;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:10px;width:400px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Counting in</span>
+        <dc-import name="RecordedAnswerBox" phase="countdown" hint-size="100%,215px"></dc-import>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;width:400px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Recording</span>
+        <dc-import name="RecordedAnswerBox" phase="recording" duration="{{ forty }}" hint-size="100%,215px"></dc-import>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;width:400px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Stacked — mic opens as audio ends</span>
+        <div style="display:flex;flex-direction:column;gap:14px">
+          <dc-import name="StatusBox" status="completed" auto-run="{{ off }}" loop="{{ off }}" hint-size="100%,130px"></dc-import>
+          <dc-import name="RecordedAnswerBox" phase="recording" duration="{{ five }}" hint-size="100%,215px"></dc-import>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">TextEntryFooter</span>
+      <span style="font-size:14px;color:#5c6a68">Sits under any response field: Write Email, SWT, SST, Write from Dictation. Buttons act on the connected field; the count is live.</span>
+    </div>
+    <div style="width:740px;display:flex;flex-direction:column;gap:12px">
+      <textarea id="kalindri-response" spellcheck="false" placeholder="Type here to see the count update." style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;line-height:1.7;color:#1e2a2a;background:#fdfdfc;border:1px solid #cfccc2;border-radius:5px;padding:16px 18px;min-height:130px;width:100%;box-sizing:border-box;resize:vertical;outline:none" style-focus="border-color:#1f6f6b;box-shadow:0 0 0 3px rgba(31,111,107,0.12)"></textarea>
+      <dc-import name="TextEntryFooter" target-selector="#kalindri-response" hint-size="100%,80px"></dc-import>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">Screens</span>
+      <span style="font-size:14px;color:#5c6a68">One file per screen. Each opens on its own — practice-mode chrome throughout: no item counter, Submit rather than Next.</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 20px">
+      <a href="WriteEmail.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Write Email <span style="color:#7d8a88;font-size:13px">· text entry</span></a>
+      <a href="SummarizeWrittenText.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Summarize Written Text <span style="color:#7d8a88;font-size:13px">· passage + one sentence</span></a>
+      <a href="ReadAloud.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Read Aloud <span style="color:#7d8a88;font-size:13px">· read then speak</span></a>
+      <a href="RepeatSentence.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Repeat Sentence <span style="color:#7d8a88;font-size:13px">· listen then speak</span></a>
+      <a href="DescribeImage.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Describe Image <span style="color:#7d8a88;font-size:13px">· image + speak</span></a>
+      <a href="ListeningFillInTheBlanks.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Fill in the Blanks <span style="color:#7d8a88;font-size:13px">· audio + inline inputs</span></a>
+      <a href="ReadingMultipleChoice.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Multiple Choice <span style="color:#7d8a88;font-size:13px">· reading, no audio</span></a>
+      <a href="ReorderParagraphs.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Re-order Paragraphs <span style="color:#7d8a88;font-size:13px">· drag and drop</span></a>
+      <a href="ReadingWritingFillInTheBlanks.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">R&amp;W Fill in the Blanks <span style="color:#7d8a88;font-size:13px">· inline dropdowns</span></a>
+      <a href="ReadingFillInTheBlanks.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Reading Fill in the Blanks <span style="color:#7d8a88;font-size:13px">· word bank</span></a>
+      <a href="HighlightIncorrectWords.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Highlight Incorrect Words <span style="color:#7d8a88;font-size:13px">· click transcript</span></a>
+      <a href="RespondToASituation.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Respond to a Situation <span style="color:#7d8a88;font-size:13px">· 20s think, 40s speak</span></a>
+      <a href="AnswerShortQuestion.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Answer Short Question <span style="color:#7d8a88;font-size:13px">· mic opens at once</span></a>
+      <a href="SummarizeSpokenText.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Summarize Spoken Text <span style="color:#7d8a88;font-size:13px">· 20–30 words, 8 min</span></a>
+      <a href="WriteFromDictation.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Write from Dictation <span style="color:#7d8a88;font-size:13px">· no word band</span></a>
+      <a href="ReadingMultipleChoiceSingle.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">MCQ Single <span style="color:#7d8a88;font-size:13px">· reading</span></a>
+      <a href="ListeningMultipleChoiceSingle.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">MCQ Single <span style="color:#7d8a88;font-size:13px">· listening</span></a>
+      <a href="ListeningMultipleChoiceMultiple.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">MCQ Multiple <span style="color:#7d8a88;font-size:13px">· listening, negative marking</span></a>
+      <a href="SelectMissingWord.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Select Missing Word <span style="color:#7d8a88;font-size:13px">· final words replaced by a beep</span></a>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">Results</span>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 20px">
+      <a href="WriteEmailResults.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Write Email results <span style="color:#7d8a88;font-size:13px">· seven traits</span></a>
+      <a href="SpeakingResults.dc.html" style="font-size:15px;text-decoration:none;padding:12px 16px;background:#ffffff;border:1px solid #dcd8cf;border-radius:4px">Speaking results <span style="color:#7d8a88;font-size:13px">· waveform + word colouring</span></a>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">QuestionListPanel</span>
+      <span style="font-size:14px;color:#5c6a68">Slide-over question picker. See it live in <a href="WriteEmail.dc.html">Write Email</a> (trait totals) and <a href="ReadingMultipleChoice.dc.html">Multiple Choice</a> (correct/total) — click the tab on the right edge.</span>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">McqOptionList</span>
+      <span style="font-size:14px;color:#5c6a68">Radio or checkbox variant from one <span style="font-family:'IBM Plex Mono',monospace">multi</span> flag. Used by four question types.</span>
+    </div>
+    <div style="display:flex;gap:28px;flex-wrap:wrap">
+      <div style="width:520px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Single answer</span>
+        <dc-import name="McqOptionList" options="{{ mcqSingle }}" hint-size="100%,200px"></dc-import>
+      </div>
+      <div style="width:520px;display:flex;flex-direction:column;gap:10px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Multiple answers</span>
+        <dc-import name="McqOptionList" options="{{ mcqMulti }}" multi="{{ on }}" hint-size="100%,200px"></dc-import>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">TraitBar</span>
+      <span style="font-size:14px;color:#5c6a68">One scored trait. Turns amber under 60% of its maximum. Used by every results screen.</span>
+    </div>
+    <div style="width:700px;display:flex;flex-direction:column;gap:14px">
+      <dc-import name="TraitBar" name-text="Content" score="{{ two }}" max="{{ three }}" descriptor="Third theme not developed" hint-size="100%,40px"></dc-import>
+      <dc-import name="TraitBar" name-text="Email Conventions" score="{{ two }}" max="{{ two }}" descriptor="Greeting, register and sign-off correct" hint-size="100%,40px"></dc-import>
+      <dc-import name="TraitBar" name-text="Grammar" score="{{ one }}" max="{{ two }}" descriptor="Two sentence-boundary errors" hint-size="100%,40px"></dc-import>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">DropdownBlank · WordBankBlanks · HighlightWords</span>
+      <span style="font-size:14px;color:#5c6a68">The three answer mechanics. Each fills its own question type and is driven entirely by props.</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:26px">
+      <div style="display:flex;align-items:center;gap:14px;font-size:17px;color:#283634">
+        <span>A measure that</span>
+        <dc-import name="DropdownBlank" choices="{{ demoChoices }}" hint-size="170px,42px"></dc-import>
+        <span>little about take-up.</span>
+      </div>
+      <div style="width:900px">
+        <dc-import name="WordBankBlanks" parts="{{ demoParts }}" words="{{ demoWords }}" hint-size="100%,300px"></dc-import>
+      </div>
+      <div style="width:900px">
+        <dc-import name="HighlightWords" text="{{ demoTranscript }}" hint-size="100%,220px"></dc-import>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;align-items:baseline;gap:14px;padding-bottom:12px;border-bottom:1px solid #dcd8cf">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500;color:#1f6f6b">WriteEmail</span>
+      <span style="font-size:14px;color:#5c6a68">Composed screen, single column like the real exam: prompt, scenario, themes, then the response field with the footer beneath. The word count turns amber outside 80–120.</span>
+    </div>
+    <div style="border:1px solid #dcd8cf;border-radius:8px;overflow:hidden;background:#f4f2ee">
+      <dc-import name="WriteEmail" hint-size="100%,1180px"></dc-import>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    return {
+      twelve: 12, forty: 40, five: 5, off: false, on: true,
+      one: 1, two: 2, three: 3,
+      mcqSingle: [
+        'Take-up rates are a more useful measure than coverage.',
+        'Coverage maps overstate the number of households passed.',
+        'Monthly price is the main barrier for rural subscribers.'
+      ],
+      mcqMulti: [
+        'Planners gained data on real boarding patterns.',
+        'Some agencies rerouted buses with low ridership.',
+        'Provinces limited how boarding records are retained.',
+        'Transit fares fell after adoption.'
+      ],
+      demoChoices: ['says', 'tells', 'speaks', 'talks'],
+      demoParts: [
+        'Programs in northern towns face costs that southern ones rarely',
+        ', so an organisation that simply buys and',
+        ' groceries runs out of money first.'
+      ],
+      demoWords: ['encounter', 'distributes', 'restructured', 'delivers'],
+      demoTranscript: 'Snow clearing budgets are set in the summer, months before anyone knows what the winter will bring, and a single major storm can consume a quarter of the annual allocation in three days.'
+    };
+  }
+}
+</script>
+</body>
+</html>

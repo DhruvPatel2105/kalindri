@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</helmet>
+<div id="estimation" style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;width:100%;box-sizing:border-box">
+  <button type="button" onClick="{{ toggle }}" style="font-family:'Libre Franklin',Helvetica,sans-serif;display:flex;align-items:center;justify-content:space-between;gap:20px;width:100%;text-align:left;background:transparent;border:0;padding:22px 30px;cursor:pointer">
+    <span style="font-size:16px;font-weight:600;color:#17544f">How is this estimated?</span>
+    <span style="{{ chevronStyle }}">&#9662;</span>
+  </button>
+  <div style="{{ bodyStyle }}">
+    <div style="display:flex;flex-direction:column;gap:22px;max-width:760px">
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Where the task weights come from</span>
+        <p style="margin:0;font-size:15px;line-height:1.75;color:#283634;text-wrap:pretty">Estimated using Pearson's published question counts and scoring rubrics. Pearson does not publish task weightings. This is our derivation, not an official figure.</p>
+        <p style="margin:0;font-size:15px;line-height:1.75;color:#283634;text-wrap:pretty">We count how many questions of each type appear in the exam and how many rubric marks each one carries, then work out what share of a skill score that type can move. Where a task feeds two skills &mdash; Read Aloud scores into both Reading and Speaking &mdash; its marks are counted in both.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">The CLB conversion is official</span>
+        <p style="margin:0;font-size:15px;line-height:1.75;color:#283634;text-wrap:pretty">The PTE Core score to Canadian Language Benchmark alignment table is published by Pearson and used by IRCC for Express Entry, and we use it unmodified. This is the most reliable figure on the page, and it is why your CLB band is shown before any number. Your benchmark is set by your <strong style="font-weight:600">lowest single skill</strong> &mdash; not an average &mdash; which is why one skill can hold the other three back.</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">The range is an approximation</span>
+        <p style="margin:0;font-size:15px;line-height:1.75;color:#283634;text-wrap:pretty">No official or peer-reviewed conversion exists from rubric marks to the 10&ndash;90 scale. The range you see is our approximation from your rubric-level scores, shown as a range because a single number would fake a precision we do not have.</p>
+        <div style="border-left:3px solid #b58b2a;background:#fbf3e3;padding:16px 20px">
+          <p style="margin:0;font-size:15px;line-height:1.7;color:#283634;text-wrap:pretty"><strong style="font-weight:600">This is not a predicted exam result.</strong> It describes the work you have done here, not what you will score on test day. Treat the CLB band as the signal and the range as a rough position inside it.</p>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Why some figures say &ldquo;needs more data&rdquo;</span>
+        <p style="margin:0;font-size:15px;line-height:1.75;color:#283634;text-wrap:pretty">Below five attempts on a task type, your accuracy swings too much to rank or estimate from, so we say so rather than showing a number that would move next week.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1040,&quot;height&quot;:90},&quot;openByDefault&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { open: null };
+  renderVals() {
+    const open = this.state.open === null ? (this.props.openByDefault ?? false) : this.state.open;
+    return {
+      toggle: () => this.setState({ open: !open }),
+      bodyStyle: {
+        display: open ? 'block' : 'none',
+        padding: '0 30px 30px',
+        borderTop: '1px solid #f0ede5', marginTop: '-1px', paddingTop: '24px'
+      },
+      chevronStyle: {
+        fontSize: '14px', color: '#5c6a68',
+        transform: open ? 'rotate(180deg)' : 'none',
+        transition: 'transform 140ms ease'
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

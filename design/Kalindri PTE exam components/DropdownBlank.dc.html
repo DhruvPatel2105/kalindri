@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&display=swap" rel="stylesheet" />
+</helmet>
+<select onChange="{{ onChange }}" style="{{ selectStyle }}">
+  <option value="">— select —</option>
+  <sc-for list="{{ choices }}" as="c" hint-placeholder-count="4">
+    <option value="{{ c }}">{{ c }}</option>
+  </sc-for>
+</select>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:220,&quot;height&quot;:48},&quot;choices&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;string[]&quot;},&quot;onChange&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(value: string) =&gt; void&quot;}}">
+class Component extends DCLogic {
+  state = { value: '' };
+  renderVals() {
+    const filled = this.state.value !== '';
+    return {
+      choices: this.props.choices ?? ['first', 'second', 'third', 'fourth'],
+      onChange: (e) => {
+        this.setState({ value: e.target.value });
+        if (this.props.onChange) this.props.onChange(e.target.value);
+      },
+      selectStyle: {
+        fontFamily: "'Libre Franklin',Helvetica,sans-serif", fontSize: '16px',
+        color: filled ? '#173534' : '#7d8a88',
+        fontWeight: filled ? 500 : 400,
+        background: filled ? '#eaf2f1' : '#ffffff',
+        border: '1px solid ' + (filled ? '#1f6f6b' : '#a9c4c1'),
+        borderRadius: '3px', padding: '5px 10px', minWidth: '150px', cursor: 'pointer'
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

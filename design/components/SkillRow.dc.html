@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</helmet>
+<div style="{{ rowStyle }}">
+  <span style="font-size:16px;font-weight:600;color:#1e2a2a">{{ nameText }}</span>
+  <span style="{{ clbStyle }}">{{ clbLabel }}</span>
+  <div style="display:flex;flex-direction:column;gap:9px;min-width:0;padding-bottom:15px">
+    <div style="display:flex;align-items:baseline;gap:9px">
+      <span style="{{ rangeStyle }}">{{ rangeLabel }}</span>
+      <span style="{{ estStyle }}">estimated</span>
+    </div>
+    <div style="position:relative;height:8px;border-radius:4px;background:#eeebe3">
+      <div style="{{ spanStyle }}"></div>
+      <div style="{{ tickStyle }}"></div>
+      <span style="{{ tickLabelStyle }}">{{ tickLabel }}</span>
+    </div>
+  </div>
+  <span style="{{ gapStyle }}">{{ gapText }}</span>
+  <a href="#practice" style="font-size:14px;font-weight:600;color:#1f6f6b;text-decoration:none;white-space:nowrap" style-hover="color:#17544f;text-decoration:underline">{{ actionLabel }}</a>
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:900,&quot;height&quot;:80},&quot;nameText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Writing&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;rangeLo&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:80,&quot;min&quot;:10,&quot;max&quot;:90,&quot;tsType&quot;:&quot;number&quot;},&quot;rangeHi&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:85,&quot;min&quot;:10,&quot;max&quot;:90,&quot;tsType&quot;:&quot;number&quot;},&quot;clb&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:8,&quot;min&quot;:1,&quot;max&quot;:12,&quot;tsType&quot;:&quot;number&quot;},&quot;threshold&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:88,&quot;min&quot;:10,&quot;max&quot;:90,&quot;tsType&quot;:&quot;number&quot;},&quot;status&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;blocking&quot;,&quot;options&quot;:[&quot;met&quot;,&quot;boundary&quot;,&quot;blocking&quot;,&quot;nodata&quot;],&quot;tsType&quot;:&quot;string&quot;},&quot;gapText&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;3\u20138 points to CLB 9 \u2014 blocking&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;actionLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Practise Writing \u2192&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;noDataLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Needs more data&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;scaleLo&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:10,&quot;min&quot;:0,&quot;max&quot;:80,&quot;section&quot;:&quot;Bar scale&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;scaleHi&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:90,&quot;min&quot;:20,&quot;max&quot;:90,&quot;section&quot;:&quot;Bar scale&quot;,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  renderVals() {
+    const status = this.props.status ?? 'met';
+    const lo = this.props.rangeLo, hi = this.props.rangeHi, th = this.props.threshold;
+    const s0 = this.props.scaleLo ?? 10;
+    const s1 = this.props.scaleHi ?? 90;
+    const span = Math.max(1, s1 - s0);
+    const pos = (v) => Math.max(0, Math.min(100, ((v - s0) / span) * 100));
+    const hasRange = status !== 'nodata' && typeof lo === 'number' && typeof hi === 'number';
+    const hasTick = typeof th === 'number';
+    const blocking = status === 'blocking';
+    const boundary = status === 'boundary';
+    const nodata = status === 'nodata';
+    const attention = blocking || boundary;
+    const skin = blocking
+      ? { background: '#fbf3e3', border: '1px solid #e6d5ab', borderLeft: '3px solid #b58b2a' }
+      : boundary
+        ? { background: '#ffffff', border: '1px solid #e6d5ab', borderLeft: '3px solid #b58b2a' }
+        : nodata
+          ? { background: '#fafaf8', border: '1px solid #e6e2d9', borderLeft: '3px solid #dedad0' }
+          : { background: '#ffffff', border: '1px solid #ddd9d0', borderLeft: '3px solid #1f6f6b' };
+    return {
+      rangeLabel: hasRange ? lo + '\u2013' + hi : (this.props.noDataLabel ?? 'Needs more data'),
+      clbLabel: nodata ? '\u2014' : 'CLB ' + (this.props.clb ?? 9),
+      tickLabel: hasTick ? String(th) : '',
+      rowStyle: Object.assign({
+        fontFamily: "'Libre Franklin',Helvetica,sans-serif",
+        display: 'grid', gridTemplateColumns: '112px 76px minmax(0,1fr) 216px auto',
+        gap: '22px', alignItems: 'center', padding: '17px 22px 6px',
+        borderRadius: '4px', boxSizing: 'border-box', width: '100%'
+      }, skin),
+      clbStyle: {
+        fontSize: '15px', fontWeight: 600, letterSpacing: '-0.01em',
+        color: nodata ? '#9aa39f' : blocking ? '#8a6a1e' : '#17544f'
+      },
+      rangeStyle: {
+        fontFamily: hasRange ? "'IBM Plex Mono',monospace" : "'Libre Franklin',Helvetica,sans-serif",
+        fontSize: hasRange ? '16px' : '14px', fontWeight: 500,
+        color: hasRange ? '#1e2a2a' : '#7d8a88'
+      },
+      estStyle: {
+        display: hasRange ? 'inline' : 'none',
+        fontSize: '11px', fontWeight: 600, letterSpacing: '0.08em',
+        textTransform: 'uppercase', color: '#5c6a68'
+      },
+      spanStyle: {
+        display: hasRange ? 'block' : 'none', position: 'absolute',
+        left: hasRange ? pos(lo) + '%' : 0,
+        width: hasRange ? Math.max(3, pos(hi) - pos(lo)) + '%' : 0,
+        height: '100%', borderRadius: '4px',
+        background: blocking ? '#b58b2a' : '#1f6f6b'
+      },
+      tickStyle: {
+        display: hasTick ? 'block' : 'none', position: 'absolute',
+        left: hasTick ? pos(th) + '%' : 0,
+        top: '-4px', width: '2px', height: '16px',
+        background: '#1e2a2a', boxShadow: '0 0 0 1px #ffffff'
+      },
+      tickLabelStyle: {
+        display: hasTick ? 'block' : 'none', position: 'absolute',
+        left: hasTick ? pos(th) + '%' : 0, top: '15px',
+        transform: 'translateX(-50%)',
+        fontFamily: "'IBM Plex Mono',monospace", fontSize: '10px',
+        color: attention ? '#8a6a1e' : '#7d8a88', whiteSpace: 'nowrap'
+      },
+      gapStyle: {
+        fontSize: '14px', fontWeight: nodata ? 400 : 600, lineHeight: 1.45,
+        color: nodata ? '#9aa39f' : attention ? '#8a6a1e' : '#1f6f6b'
+      }
+    };
+  }
+}
+
+</script>
+</body>
+</html>

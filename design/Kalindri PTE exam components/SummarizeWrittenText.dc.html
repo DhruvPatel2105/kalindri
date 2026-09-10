@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 40px;color:#1e2a2a">
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Summarize Written Text</span>
+    <div style="display:flex;align-items:center;gap:14px">
+      <span style="font-size:12px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:#7d8a88">Time remaining</span>
+      <span style="{{ timerStyle }}">{{ clock }}</span>
+    </div>
+  </div>
+
+  <div style="position:relative;margin:0 48px;background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:38px 56px 44px;overflow:hidden">
+    <div style="position:relative;display:flex;flex-direction:column;gap:26px;max-width:1000px">
+      <p style="margin:0;font-size:17px;font-weight:600;line-height:1.5;text-wrap:pretty">Read the passage below and summarize it using one sentence. Type your response in the box at the bottom of the screen. You have 10 minutes to finish this task. Your response will be judged on the quality of your writing and on how well your response presents the key points in the passage.</p>
+
+      <div style="border-left:3px solid #1f6f6b;background:#fafaf8;padding:24px 28px;display:flex;flex-direction:column;gap:16px">
+        <p style="margin:0;font-size:16px;line-height:1.7;color:#283634;text-wrap:pretty">Canada's foreign credential recognition system has long been criticised for its fragmentation. Because licensing sits with provincial regulators rather than the federal government, an engineer accredited in Ontario may still face a further assessment when moving to Alberta, and an internationally trained nurse can spend two years in bridging programs before practising at all.</p>
+        <p style="margin:0;font-size:16px;line-height:1.7;color:#283634;text-wrap:pretty">Recent federal funding has attempted to shorten these timelines by paying for assessment costs directly and by encouraging regulators to accept common evidence standards. Early evaluations suggest the money reduces individual expense more reliably than it reduces waiting time, because the bottleneck is assessor capacity rather than applicant funding. Analysts therefore argue that credential recognition is a labour-supply problem inside the regulators themselves, not an information problem among newcomers.</p>
+      </div>
+    </div>
+
+    <div style="position:relative;display:flex;flex-direction:column;gap:14px;margin-top:30px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px">
+        <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Your summary — one sentence</span>
+        <span style="font-size:13px;color:#7d8a88">25–50 words for full Form marks · one sentence, no full stop until the end</span>
+      </div>
+      <textarea id="swt-response" spellcheck="false" placeholder="Write one complete sentence." style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:16px;line-height:1.7;color:#1e2a2a;background:#fdfdfc;border:1px solid #a9c4c1;border-radius:3px;padding:16px 20px;height:150px;width:100%;box-sizing:border-box;resize:vertical;outline:none" style-focus="border-color:#1f6f6b;box-shadow:0 0 0 3px rgba(31,111,107,0.12)"></textarea>
+      <dc-import name="TextEntryFooter" target-selector="#swt-response" min-words="{{ minWords }}" max-words="{{ maxWords }}" hint-size="100%,90px"></dc-import>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;margin:22px 48px 0">
+    <span style="font-size:13px;line-height:1.6;color:#7d8a88;max-width:560px">Scored on content, form, grammar and vocabulary. Form is all-or-nothing: outside 25–50 words, or more than one sentence, scores zero regardless of content.</span>
+    <button type="button" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 38px;height:46px;cursor:pointer" style-hover="background:#17544f;border-color:#17544f" style-active="background:#123f3b">Submit</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;minutes&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:10,&quot;min&quot;:1,&quot;max&quot;:30,&quot;unit&quot;:&quot;min&quot;,&quot;tsType&quot;:&quot;number&quot;},&quot;minWords&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:25,&quot;min&quot;:1,&quot;max&quot;:100,&quot;tsType&quot;:&quot;number&quot;},&quot;maxWords&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:50,&quot;min&quot;:10,&quot;max&quot;:300,&quot;tsType&quot;:&quot;number&quot;}}">
+class Component extends DCLogic {
+  state = { left: 600 };
+  componentDidMount() {
+    this.setState({ left: (this.props.minutes ?? 10) * 60 });
+    this.iv = setInterval(() => this.setState((s) => ({ left: s.left > 0 ? s.left - 1 : 0 })), 1000);
+  }
+  componentWillUnmount() { clearInterval(this.iv); }
+  renderVals() {
+    const m = Math.floor(this.state.left / 60);
+    const s = this.state.left % 60;
+    const urgent = this.state.left <= 60;
+    return {
+      minWords: this.props.minWords ?? 25,
+      maxWords: this.props.maxWords ?? 50,
+      clock: m + ':' + String(s).padStart(2, '0'),
+      timerStyle: {
+        fontFamily: "'IBM Plex Mono',monospace", fontSize: '24px', fontWeight: 500,
+        letterSpacing: '0.02em', padding: '5px 14px', borderRadius: '4px',
+        color: urgent ? '#8a3d24' : '#1e2a2a',
+        background: urgent ? '#fbeee7' : '#ffffff',
+        border: '1px solid ' + (urgent ? '#e2c3b5' : '#e2ded5')
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

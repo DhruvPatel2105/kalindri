@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif">
+  <div onClick="{{ onTabClick }}" style="{{ tabStyle }}">
+    <span style="{{ chevronStyle }}">‹</span>
+  </div>
+  <div onClick="{{ onOverlayClick }}" style="{{ overlayStyle }}"></div>
+  <div style="{{ panelStyle }}">
+    <div style="padding:22px 24px 18px;display:flex;flex-direction:column;gap:14px;border-bottom:1px solid #e6e2d9;flex:0 0 auto">
+      <span style="font-size:16px;font-weight:600;color:#17544f">Choose a question</span>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#7d8a88;flex:0 0 auto;width:44px">Sort</span>
+        <select onChange="{{ onSortChange }}" value="{{ sort }}" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:14px;color:#1e2a2a;background:#ffffff;border:1px solid #cfccc2;border-radius:4px;padding:6px 10px;flex:1 1 auto">
+          <sc-for list="{{ sortOptions }}" as="s" hint-placeholder-count="4">
+            <option value="{{ s.value }}">{{ s.label }}</option>
+          </sc-for>
+        </select>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#7d8a88;width:70px">Difficulty</span>
+        <sc-for list="{{ diffChips }}" as="c" hint-placeholder-count="3">
+          <span onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</span>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;color:#7d8a88;width:70px">Status</span>
+        <sc-for list="{{ statusChips }}" as="c" hint-placeholder-count="2">
+          <span onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</span>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 24px;border-bottom:1px solid #e6e2d9;flex:0 0 auto">
+      <span style="font-size:13px;color:#5c6a68">{{ summaryLabel }}</span>
+      <span onClick="{{ onReset }}" style="font-size:13px;color:#9c5c48;text-decoration:underline;cursor:pointer">Reset my practice history</span>
+    </div>
+
+    <div style="flex:1 1 auto;overflow-y:auto;display:flex;flex-direction:column">
+      <sc-for list="{{ rows }}" as="q" hint-placeholder-count="6">
+        <div onClick="{{ q.onSelect }}" style="{{ q.rowStyle }}" style-hover="background:#f2efe6">
+          <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+            <div style="display:flex;flex-direction:column;gap:5px;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7d8a88">{{ q.number }}</span>
+                <span style="{{ q.currentChipStyle }}">Current</span>
+                <span style="{{ q.modelChipStyle }}">Model answer</span>
+              </div>
+              <span style="font-size:15px;font-weight:500;color:#1e2a2a;line-height:1.4">{{ q.title }}</span>
+              <span style="font-size:13px;color:#7d8a88">{{ q.attemptsLabel }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:10px;flex:0 0 auto">
+              <span onClick="{{ q.onBookmark }}" style="{{ q.bookmarkStyle }}"></span>
+              <span style="{{ q.scoreStyle }}">{{ q.scoreLabel }}</span>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+      <span style="{{ emptyStyle }}">No questions match these filters.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:48,&quot;height&quot;:48},&quot;questions&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;{id:number,number:number,title:string,difficulty:'easy'|'medium'|'hard',hasModel:boolean,attempted:boolean,attempts:number,score:number,max:number,bookmarked:boolean}[]&quot;},&quot;currentId&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;number&quot;},&quot;totalCount&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:42,&quot;min&quot;:1,&quot;max&quot;:200,&quot;tsType&quot;:&quot;number&quot;},&quot;onSelect&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;(q: object) =&gt; void&quot;}}">
+function chip(active) {
+  return {
+    fontSize: '13px', padding: '5px 12px', borderRadius: '999px', cursor: 'pointer',
+    border: '1px solid ' + (active ? '#1f6f6b' : '#cfccc2'),
+    background: active ? '#eaf2f1' : '#ffffff',
+    color: active ? '#173534' : '#5c6a68',
+    fontWeight: active ? 600 : 400
+  };
+}
+function toggleVal(arr, val) {
+  return arr.includes(val) ? arr.filter((x) => x !== val) : arr.concat(val);
+}
+function sortQuestions(list, sort) {
+  const copy = list.slice();
+  const ratio = (q) => (q.attempted ? q.score / q.max : -1);
+  if (sort === 'best') return copy.sort((a, b) => ratio(b) - ratio(a));
+  if (sort === 'unattempted') return copy.sort((a, b) => (a.attempted === b.attempted ? 0 : a.attempted ? 1 : -1));
+  if (sort === 'impact') return copy.sort((a, b) => ratio(a) - ratio(b));
+  return copy;
+}
+
+class Component extends DCLogic {
+  state = { open: false, sort: 'default', diff: [], status: [], bookmarkOverrides: {}, wasReset: false, currentId: null };
+
+  renderVals() {
+    const currentId = this.state.currentId ?? this.props.currentId ?? null;
+    const base = this.props.questions || [];
+    const questions = base.map((q) => {
+      const bookmarked = Object.prototype.hasOwnProperty.call(this.state.bookmarkOverrides, q.id)
+        ? this.state.bookmarkOverrides[q.id] : !!q.bookmarked;
+      return Object.assign({}, q, {
+        bookmarked,
+        attempted: this.state.wasReset ? false : q.attempted,
+        attempts: this.state.wasReset ? 0 : q.attempts,
+        score: this.state.wasReset ? 0 : q.score
+      });
+    });
+
+    let filtered = questions;
+    if (this.state.diff.length) filtered = filtered.filter((q) => this.state.diff.includes(q.difficulty));
+    if (this.state.status.length) filtered = filtered.filter((q) => this.state.status.includes(q.attempted ? 'attempted' : 'not'));
+    const sorted = sortQuestions(filtered, this.state.sort);
+    const attemptedCount = questions.filter((q) => q.attempted).length;
+    const totalCount = this.props.totalCount ?? 42;
+
+    return {
+      sort: this.state.sort,
+      sortOptions: [
+        { value: 'default', label: 'Default' },
+        { value: 'best', label: 'My best score' },
+        { value: 'impact', label: 'Highest impact' },
+        { value: 'unattempted', label: 'Not yet attempted' }
+      ],
+      onSortChange: (e) => this.setState({ sort: e.target.value }),
+      diffChips: ['easy', 'medium', 'hard'].map((d) => ({
+        label: d[0].toUpperCase() + d.slice(1),
+        onClick: () => this.setState((s) => ({ diff: toggleVal(s.diff, d) })),
+        style: chip(this.state.diff.includes(d))
+      })),
+      statusChips: [['attempted', 'Attempted'], ['not', 'Not attempted']].map(([v, label]) => ({
+        label,
+        onClick: () => this.setState((s) => ({ status: toggleVal(s.status, v) })),
+        style: chip(this.state.status.includes(v))
+      })),
+      summaryLabel: 'Attempted ' + attemptedCount + ' of ' + totalCount,
+      onReset: () => this.setState({ wasReset: true, bookmarkOverrides: {} }),
+      rows: sorted.map((q) => {
+        const isCurrent = q.id === currentId;
+        return {
+          number: '#' + q.number,
+          title: q.title,
+          attemptsLabel: q.attempted ? 'You: ' + q.attempts + (q.attempts === 1 ? ' attempt' : ' attempts') : 'Not attempted yet',
+          scoreLabel: q.attempted ? q.score + ' / ' + q.max : '—',
+          scoreStyle: {
+            fontFamily: "'IBM Plex Mono',monospace", fontSize: '14px', fontWeight: 500,
+            color: q.attempted ? '#1e2a2a' : '#9aa39f'
+          },
+          currentChipStyle: {
+            display: isCurrent ? 'inline-block' : 'none',
+            fontSize: '11px', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+            color: '#ffffff', background: '#1f6f6b', borderRadius: '3px', padding: '2px 7px'
+          },
+          modelChipStyle: {
+            display: q.hasModel ? 'inline-block' : 'none',
+            fontSize: '11px', fontWeight: 600, color: '#7d8a88', border: '1px solid #d6d3ca',
+            borderRadius: '3px', padding: '2px 7px'
+          },
+          bookmarkStyle: {
+            display: 'inline-block', width: '13px', height: '17px', cursor: 'pointer',
+            clipPath: 'polygon(0 0,100% 0,100% 100%,50% 78%,0 100%)',
+            background: q.bookmarked ? '#1f6f6b' : '#dedad0'
+          },
+          rowStyle: {
+            padding: '16px 24px', borderBottom: '1px solid #ece8de', cursor: 'pointer',
+            background: isCurrent ? '#eaf2f1' : 'transparent',
+            borderLeft: '3px solid ' + (isCurrent ? '#1f6f6b' : 'transparent')
+          },
+          onSelect: () => {
+            this.setState({ currentId: q.id, open: false });
+            if (this.props.onSelect) this.props.onSelect(q);
+          },
+          onBookmark: (e) => {
+            e.stopPropagation();
+            this.setState((s) => ({ bookmarkOverrides: Object.assign({}, s.bookmarkOverrides, { [q.id]: !q.bookmarked }) }));
+          }
+        };
+      }),
+      emptyStyle: { display: sorted.length ? 'none' : 'block', padding: '40px 24px', textAlign: 'center', color: '#9aa39f', fontSize: '14px' },
+      onTabClick: () => this.setState((s) => ({ open: !s.open })),
+      onOverlayClick: () => this.setState({ open: false }),
+      tabStyle: {
+        position: 'fixed', top: '50%', transform: 'translateY(-50%)',
+        right: this.state.open ? '420px' : '0px', transition: 'right 220ms ease',
+        width: '26px', height: '64px', background: '#1f6f6b', borderRadius: '8px 0 0 8px',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+        zIndex: 1200, boxShadow: '-2px 0 6px rgba(30,42,42,0.18)'
+      },
+      chevronStyle: {
+        fontSize: '18px', color: '#ffffff', display: 'inline-block',
+        transform: this.state.open ? 'rotate(180deg)' : 'none', transition: 'transform 220ms ease'
+      },
+      overlayStyle: {
+        position: 'fixed', inset: 0, background: this.state.open ? 'rgba(23,42,41,0.35)' : 'transparent',
+        pointerEvents: this.state.open ? 'auto' : 'none', transition: 'background 220ms ease', zIndex: 1100
+      },
+      panelStyle: {
+        position: 'fixed', top: 0, right: 0, bottom: 0, width: '420px', background: '#f7f5f0',
+        boxShadow: '-6px 0 24px rgba(30,42,42,0.18)',
+        transform: this.state.open ? 'translateX(0)' : 'translateX(100%)',
+        transition: 'transform 240ms ease', zIndex: 1150, display: 'flex', flexDirection: 'column', overflow: 'hidden'
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

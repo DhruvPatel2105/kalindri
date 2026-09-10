@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<div style="font-family:'Libre Franklin',Helvetica,sans-serif;background:#f4f2ee;min-width:1024px;padding:0 0 56px;color:#1e2a2a">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;gap:24px;padding:20px 48px 22px">
+    <span style="font-size:30px;font-weight:600;letter-spacing:-0.02em;color:#17544f">Write Email — your result</span>
+    <span style="font-size:13px;color:#7d8a88">Attempt 4 · 7 September 2026</span>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:20px;margin:0 48px">
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;align-items:center;gap:40px;flex-wrap:wrap">
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Trait total</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:34px;font-weight:500;letter-spacing:-0.01em">12<span style="font-size:20px;color:#7d8a88">/15</span></span>
+      </div>
+      <div style="width:1px;height:52px;background:#e6e2d9"></div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <span style="font-size:12px;font-weight:600;letter-spacing:0.09em;text-transform:uppercase;color:#7d8a88">Estimated</span>
+        <span style="font-size:26px;font-weight:600;color:#17544f">CLB 8 · roughly 79–84</span>
+      </div>
+      <a href="#estimation" style="font-size:13px;text-decoration:underline;margin-left:auto">How is this estimated?</a>
+    </div>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:20px">
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Seven traits</span>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <dc-import name="TraitBar" name-text="Content" score="{{ contentScore }}" max="{{ three }}" descriptor="Third theme not developed" hint-size="100%,40px"></dc-import>
+        <dc-import name="TraitBar" name-text="Email Conventions" score="{{ two }}" max="{{ two }}" descriptor="Greeting, register and sign-off correct" hint-size="100%,40px"></dc-import>
+        <dc-import name="TraitBar" name-text="Form" score="{{ two }}" max="{{ two }}" descriptor="118 words — within 50–120" hint-size="100%,40px"></dc-import>
+        <dc-import name="TraitBar" name-text="Organisation" score="{{ two }}" max="{{ two }}" descriptor="Clear order, thin linking" hint-size="100%,40px"></dc-import>
+        <dc-import name="TraitBar" name-text="Vocabulary" score="{{ two }}" max="{{ two }}" descriptor="Range appropriate to the task" hint-size="100%,40px"></dc-import>
+        <dc-import name="TraitBar" name-text="Grammar" score="{{ one }}" max="{{ two }}" descriptor="Two sentence-boundary errors" hint-size="100%,40px"></dc-import>
+        <dc-import name="TraitBar" name-text="Spelling" score="{{ one }}" max="{{ two }}" descriptor="One error" hint-size="100%,40px"></dc-import>
+      </div>
+    </div>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:18px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Your text, annotated</span>
+        <div style="display:flex;align-items:center;gap:20px">
+          <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5c6a68"><span style="width:22px;height:12px;border-radius:2px;background:#fbeee7;border-bottom:2px solid #b0472f"></span>grammar</span>
+          <span style="display:flex;align-items:center;gap:8px;font-size:13px;color:#5c6a68"><span style="width:22px;height:12px;border-radius:2px;background:#fbf3e3;border-bottom:2px solid #b58b2a"></span>spelling</span>
+        </div>
+      </div>
+      <p style="margin:0;font-size:16px;line-height:2;color:#283634;max-width:920px;text-wrap:pretty">Dear Ms Tremblay,<br />
+      I am writing to ask the department to reconsider closing the neighbourhood pool this winter. First, the children's swimming lessons held there are the only affordable ones in the area, and families would have to travel across the city to <span title="Spelling: continue" style="background:#fbf3e3;border-bottom:2px solid #b58b2a;padding:1px 3px;cursor:help">continu</span> them. Second, the seniors' morning group <span title="Subject–verb agreement: meets" style="background:#fbeee7;border-bottom:2px solid #b0472f;padding:1px 3px;cursor:help">meet</span> three times a week and several members have told me the pool is their main reason for leaving the house in winter. Third, closing a pool costs money too, <span title="Comma splice: use “and” or a full stop" style="background:#fbeee7;border-bottom:2px solid #b0472f;padding:1px 3px;cursor:help">reopening in spring requires draining and retesting</span>.<br />
+      I would be grateful if you would review the decision.<br />
+      Yours sincerely,<br />Priya Deshmukh</p>
+      <span style="font-size:13px;color:#7d8a88">Hover a highlight for the explanation. 3 issues across 118 words.</span>
+    </div>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:18px">
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Per-trait feedback</span>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <sc-for list="{{ feedback }}" as="f" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;gap:6px;padding-bottom:16px;border-bottom:1px solid #f0ede5">
+            <span style="font-size:15px;font-weight:600">{{ f.name }}</span>
+            <span style="font-size:15px;line-height:1.65;color:#283634">{{ f.fix }}</span>
+            <span style="font-size:15px;line-height:1.65;color:#1f6f6b">{{ f.good }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+    <div style="background:#ffffff;border:1px solid #ddd9d0;border-radius:4px;padding:28px 32px;display:flex;flex-direction:column;gap:16px">
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Compared with your last three attempts</span>
+      <div style="display:flex;gap:14px;align-items:flex-end">
+        <sc-for list="{{ history }}" as="h" hint-placeholder-count="4">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px;width:110px">
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#5c6a68">{{ h.label }}</span>
+            <div style="{{ h.barStyle }}"></div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:14px;font-weight:500">{{ h.score }}</span>
+          </div>
+        </sc-for>
+        <span style="font-size:14px;line-height:1.6;color:#283634;margin-left:16px;max-width:340px">Up three marks since your first attempt. Both remaining grammar errors are sentence-boundary errors — the same pattern as attempt 3.</span>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:14px;flex-wrap:wrap">
+      <button type="button" onClick="{{ toggleModel }}" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#1f6f6b;background:#ffffff;border:1px solid #1f6f6b;border-radius:4px;padding:0 30px;height:46px;cursor:pointer" style-hover="background:#eaf2f1">{{ modelLabel }}</button>
+      <button type="button" onClick="{{ runDeep }}" style="font-family:'Libre Franklin',Helvetica,sans-serif;font-size:15px;font-weight:600;color:#ffffff;background:#1f6f6b;border:1px solid #1f6f6b;border-radius:4px;padding:0 30px;height:46px;cursor:pointer" style-hover="background:#17544f;border-color:#17544f">{{ deepLabel }}</button>
+    </div>
+
+    <div style="{{ modelStyle }}">
+      <span style="font-size:13px;font-weight:600;letter-spacing:0.07em;text-transform:uppercase;color:#5c6a68">Model answer</span>
+      <p style="margin:10px 0 0;font-size:16px;line-height:1.8;color:#283634;max-width:920px;text-wrap:pretty">Dear Ms Tremblay, I am writing to ask you to reconsider the decision to keep the neighbourhood pool closed this winter. The children's swimming lessons run there are the only affordable option nearby, and moving them across the city would put them out of reach for several families on my street. The seniors' morning group also depends on the pool; for a number of its members it is the main reason to leave the house between November and March. Finally, a winter closure is not free — draining the pool and retesting it in spring carries its own cost, which may offset much of the saving. I would welcome the chance to discuss this further. Yours sincerely, …</p>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  state = { showModel: false, deep: 'idle' };
+  renderVals() {
+    const history = [['Attempt 1', 9], ['Attempt 2', 10], ['Attempt 3', 11], ['This one', 12]];
+    return {
+      one: 1, two: 2, three: 3, contentScore: 2,
+      feedback: [
+        { name: 'Content', fix: 'The seniors\u2019 group and the lessons are well supported, but the reopening cost is asserted without a reason a reader could weigh — name the actual expense.', good: 'All three themes appear, and the first two carry real supporting detail.' },
+        { name: 'Grammar', fix: '\u201Cthe seniors\u2019 morning group meet\u201D should be \u201Cmeets\u201D, and the last sentence joins two clauses with a comma — use \u201Cand\u201D or split it.', good: 'Modal and conditional forms are handled accurately throughout.' },
+        { name: 'Spelling', fix: '\u201Ccontinu\u201D \u2192 \u201Ccontinue\u201D.', good: 'No other spelling errors in 118 words.' },
+        { name: 'Organisation', fix: 'First / Second / Third carries the structure, but nothing links your reasons to each other. One linking phrase would lift this trait to a clear top mark.', good: 'Opening and closing lines are correctly placed and proportionate.' }
+      ],
+      history: history.map(([label, score]) => ({
+        label, score: score + '/15',
+        barStyle: { width: '38px', height: (score / 15) * 120 + 'px', borderRadius: '3px 3px 0 0', background: label === 'This one' ? '#1f6f6b' : '#c3cfcd' }
+      })),
+      modelLabel: this.state.showModel ? 'Hide model answer' : 'Reveal model answer',
+      toggleModel: () => this.setState((s) => ({ showModel: !s.showModel })),
+      deepLabel: this.state.deep === 'idle' ? 'Run deep analysis' : this.state.deep === 'running' ? 'Analysing…' : 'Deep analysis ready',
+      runDeep: () => {
+        if (this.state.deep !== 'idle') return;
+        this.setState({ deep: 'running' });
+        setTimeout(() => this.setState({ deep: 'done' }), 2200);
+      },
+      modelStyle: {
+        display: this.state.showModel ? 'block' : 'none',
+        background: '#ffffff', border: '1px solid #ddd9d0', borderRadius: '4px', padding: '28px 32px'
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

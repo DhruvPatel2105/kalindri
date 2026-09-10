@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+body { margin: 0; background: #f4f2ee; }
+a { color: #1f6f6b; }
+a:hover { color: #17544f; }
+</style>
+</helmet>
+<dc-import name="DeterministicResult" type-name="Reorder Paragraph" attempt-label="Attempt 2 &middot; 9 September 2026" correct="{{ correct }}" total="{{ total }}" unit-label="adjacent pairs correct" weight-note="Reorder Paragraph is 9.4% of your Reading score." weight-action="Practise Reorder Paragraph &#8594;" rule-title="Reorder scores adjacent pairs, not positions" rule-body="{{ ruleBody }}" rule-math="{{ ruleMath }}" rule-warn="{{ ruleWarn }}" your-sequence="{{ yourSequence }}" correct-sequence="{{ correctSequence }}" history="{{ history }}" history-meta="2 attempts &middot; accuracy appears at 5" history-note="{{ historyNote }}" next-label="Next Reorder Paragraph" hint-size="100%,100%"></dc-import>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{}">
+class Component extends DCLogic {
+  renderVals() {
+    const P = {
+      A: 'The city\u2019s bike-share scheme began as a six-month trial in two neighbourhoods.',
+      B: 'Within weeks, the stations nearest the transit hub were emptying by eight in the morning.',
+      C: 'Planners responded by trucking twelve bikes back from the quieter riverside stations each night.',
+      D: 'That redistribution kept the busy stations stocked, but it added an hour of van work to every shift.',
+      E: 'The scheme now runs city-wide, and the overnight van route has become its largest single operating cost.'
+    };
+    return {
+      correct: 3,
+      total: 4,
+      ruleBody: 'Reorder is marked on adjacent pairs \u2014 every place where one box correctly sits directly after another. It is not marked on absolute positions, so a box in the "wrong place" costs you only the pairs it touches. With N boxes there are N\u22121 adjoining places, so five boxes gives a maximum of four marks.',
+      ruleMath: '5 boxes \u2192 4 adjoining places \u2192 maximum 4 marks\nB\u2192C \u2713   C\u2192D \u2713   D\u2192E \u2713   E\u2192A \u2717   =  3 / 4',
+      ruleWarn: 'Worth seeing: your chain B\u2192C\u2192D\u2192E was entirely correct. Moving the opening sentence to the end broke exactly one pair, so a single misplaced box cost one mark rather than the whole item. There is no negative marking on Reorder.',
+      yourSequence: [
+        { tag: 'B', text: P.B, pairOk: true, pairText: 'B \u2192 C \u2014 correct pair' },
+        { tag: 'C', text: P.C, pairOk: true, pairText: 'C \u2192 D \u2014 correct pair' },
+        { tag: 'D', text: P.D, pairOk: true, pairText: 'D \u2192 E \u2014 correct pair' },
+        { tag: 'E', text: P.E, pairOk: false, pairText: 'E \u2192 A \u2014 A opens the passage; nothing follows E' },
+        { tag: 'A', text: P.A, misplaced: true }
+      ],
+      correctSequence: [
+        { tag: 'A', hint: 'Introduces the trial' },
+        { tag: 'B', hint: 'The problem it hit' },
+        { tag: 'C', hint: 'What planners did' },
+        { tag: 'D', hint: 'The cost of doing it' },
+        { tag: 'E', hint: 'Where it stands now' }
+      ],
+      history: [
+        { label: 'Attempt 1', correct: 2 },
+        { label: 'This one', correct: 3, current: true }
+      ],
+      historyNote: 'Up one pair on your first attempt. Both times the sentence you placed first was a detail sentence \u2014 the opener is the one with no pronouns and no back-reference, which is A here.'
+    };
+  }
+}
+
+</script>
+</body>
+</html>
