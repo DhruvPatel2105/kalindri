@@ -1,7 +1,10 @@
+import { and, count, eq } from "drizzle-orm";
 import Link from "next/link";
 
 import { logout } from "@/lib/auth/actions";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
+import { getDb } from "@/lib/db";
+import { accountFlags } from "@/lib/db/schema";
 
 /**
  * Protects every route under /admin/* — Next.js layouts wrap all nested
@@ -12,7 +15,16 @@ export default async function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  await requireAdmin();
+  const admin = await requireAdmin();
+
+  // Cheap to compute here — one count query, self-contained in the layout
+  // (no restructuring needed to pass data down from anywhere else).
+  const db = getDb();
+  const [openFlagCountRow] = await db
+    .select({ value: count() })
+    .from(accountFlags)
+    .where(and(eq(accountFlags.orgId, admin.orgId), eq(accountFlags.status, "open")));
+  const openFlagCount = openFlagCountRow?.value ?? 0;
 
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
@@ -27,6 +39,17 @@ export default async function AdminLayout({
               className="text-sm font-medium text-[#1f6f6b] hover:text-[#17544f]"
             >
               Users
+            </Link>
+            <Link
+              href="/admin/flags"
+              className="flex items-center gap-1.5 text-sm font-medium text-[#1f6f6b] hover:text-[#17544f]"
+            >
+              Flags
+              {openFlagCount > 0 ? (
+                <span className="inline-flex min-w-[1.25rem] items-center justify-center rounded-full bg-[#b0472f] px-1.5 py-0.5 text-xs font-semibold text-white">
+                  {openFlagCount}
+                </span>
+              ) : null}
             </Link>
           </nav>
         </div>

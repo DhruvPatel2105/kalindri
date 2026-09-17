@@ -1,4 +1,5 @@
 import { eq } from "drizzle-orm";
+import Link from "next/link";
 
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { getDb } from "@/lib/db";
@@ -52,7 +53,14 @@ export default async function AdminUsersPage() {
                 key={user.id}
                 className="border-b border-[#ddd9d0] last:border-0"
               >
-                <td className="px-4 py-2 text-[#1e2a2a]">{user.email}</td>
+                <td className="px-4 py-2 text-[#1e2a2a]">
+                  <Link
+                    href={`/admin/users/${user.id}`}
+                    className="text-[#1f6f6b] hover:text-[#17544f] hover:underline"
+                  >
+                    {user.email}
+                  </Link>
+                </td>
                 <td className="px-4 py-2 text-[#1e2a2a]">{user.role}</td>
                 <td className="px-4 py-2 text-[#1e2a2a]">
                   {user.isActive ? "Yes" : "No"}
