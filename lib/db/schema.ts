@@ -223,6 +223,7 @@ export const sessionEvents = pgTable("session_events", {
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
   geoCountry: text("geo_country"),
+  geoCity: text("geo_city"),
   previousIp: text("previous_ip"),
   previousGeo: text("previous_geo"),
   createdAt: createdAt(),
