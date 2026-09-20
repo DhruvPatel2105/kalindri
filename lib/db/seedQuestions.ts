@@ -1,8 +1,8 @@
 /**
  * Seed script — inserts original practice questions: 3 MCS_READING, 3
- * MCM_READING, 3 REORDER_PARAGRAPH, then 3 FIB_READING. Separate from
- * lib/db/seed.ts (which only seeds the organization) — deliberately not
- * conflated with it.
+ * MCM_READING, 3 REORDER_PARAGRAPH, 3 FIB_READING, then 3 FIB_RW. Separate
+ * from lib/db/seed.ts (which only seeds the organization) — deliberately
+ * not conflated with it.
  *
  * Run with:  npm run db:seed:questions   (loads .env.local if present)
  * Idempotent: checks each question's external_id before inserting, so
@@ -24,6 +24,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { fibReadingSchema } from "@/lib/questions/schemas/fib-reading";
+import { fibRwSchema } from "@/lib/questions/schemas/fib-rw";
 import { mcmReadingSchema } from "@/lib/questions/schemas/mcm-reading";
 import { mcsReadingSchema } from "@/lib/questions/schemas/mcs-reading";
 import { reorderParagraphSchema } from "@/lib/questions/schemas/reorder-paragraph";
@@ -73,7 +74,25 @@ interface FibReadingSeedItem {
   };
 }
 
-type SeedItem = McsSeedItem | McmSeedItem | ReorderSeedItem | FibReadingSeedItem;
+interface FibRwSeedItem {
+  externalId: string;
+  type: "FIB_RW";
+  payload: {
+    passage_with_blanks: string;
+    blanks: {
+      index: number;
+      options: string[];
+      correct_option: string;
+    }[];
+  };
+}
+
+type SeedItem =
+  | McsSeedItem
+  | McmSeedItem
+  | ReorderSeedItem
+  | FibReadingSeedItem
+  | FibRwSeedItem;
 
 const SEED_ITEMS: SeedItem[] = [
   {
@@ -350,6 +369,120 @@ const SEED_ITEMS: SeedItem[] = [
       correct_answers: ["available", "cancelled", "overdue", "restricted"],
     },
   },
+  {
+    // Distinct from FIB_READING's shared word bank: each blank has its OWN
+    // 4-option list, testing grammar/word-form as much as meaning — same
+    // structural distinction docs/01-question-types.md §8 draws, and the
+    // reason several options below fit the sentence's grammar but not its
+    // meaning (or vice versa), not just "one right word among unrelated
+    // distractors."
+    externalId: "FIB-RW-SEED-1",
+    type: "FIB_RW",
+    payload: {
+      passage_with_blanks:
+        "New employees at Fairview Logistics {{1}} a two-day orientation " +
+        "before starting their regular duties. During this time, they " +
+        "{{2}} basic safety procedures and meet with their assigned " +
+        "supervisor. Most staff {{3}} the orientation useful for " +
+        "understanding how different departments work together. " +
+        "Feedback forms are collected at the end so the program can be " +
+        "{{4}} each year.",
+      blanks: [
+        {
+          index: 1,
+          options: ["attend", "attends", "attending", "attended"],
+          correct_option: "attend",
+        },
+        {
+          index: 2,
+          options: ["review", "reviews", "reviewing", "reviewed"],
+          correct_option: "review",
+        },
+        {
+          index: 3,
+          options: ["find", "finds", "founded", "finding"],
+          correct_option: "find",
+        },
+        {
+          index: 4,
+          options: ["improve", "improving", "improved", "improves"],
+          correct_option: "improved",
+        },
+      ],
+    },
+  },
+  {
+    externalId: "FIB-RW-SEED-2",
+    type: "FIB_RW",
+    payload: {
+      passage_with_blanks:
+        "The municipality {{1}} a rebate program last year to encourage " +
+        "residents to replace older toilets and washing machines with " +
+        "water-efficient models. Homeowners who {{2}} the rebate must " +
+        "submit their receipts within sixty days of purchase. So far, " +
+        "more than four hundred households {{3}} taken advantage of the " +
+        "program. City staff believe the savings will continue to {{4}} " +
+        "as more residents learn about the rebate.",
+      blanks: [
+        {
+          index: 1,
+          options: ["launch", "launches", "launching", "launched"],
+          correct_option: "launched",
+        },
+        {
+          index: 2,
+          options: ["claim", "claims", "claiming", "claimed"],
+          correct_option: "claim",
+        },
+        {
+          index: 3,
+          options: ["have", "has", "having", "had"],
+          correct_option: "have",
+        },
+        {
+          index: 4,
+          options: ["grow", "grows", "growing", "grew"],
+          correct_option: "grow",
+        },
+      ],
+    },
+  },
+  {
+    externalId: "FIB-RW-SEED-3",
+    type: "FIB_RW",
+    payload: {
+      passage_with_blanks:
+        "Last spring, the office {{1}} a new recycling initiative aimed " +
+        "at reducing paper waste. Employees are now {{2}} to print " +
+        "double-sided whenever possible and to use the shared digital " +
+        "filing system instead of paper folders. Early results {{3}} " +
+        "that paper use has dropped by nearly a third since the " +
+        "initiative began. Management hopes the program will {{4}} to " +
+        "other offices across the region next year.",
+      blanks: [
+        {
+          index: 1,
+          options: ["introduce", "introduces", "introducing", "introduced"],
+          correct_option: "introduced",
+        },
+        {
+          index: 2,
+          options: ["encourage", "encourages", "encouraged", "encouraging"],
+          correct_option: "encouraged",
+        },
+        {
+          index: 3,
+          options: ["show", "shows", "showing", "shown"],
+          correct_option: "show",
+        },
+        {
+          index: 4,
+          options: ["expand", "expands", "expanded", "expanding"],
+          correct_option: "expand",
+        },
+      ],
+    },
+  },
 ];
 
 function validatePayload(item: SeedItem): unknown {
@@ -357,7 +490,8 @@ function validatePayload(item: SeedItem): unknown {
   if (item.type === "MCM_READING") return mcmReadingSchema.parse(item.payload);
   if (item.type === "REORDER_PARAGRAPH")
     return reorderParagraphSchema.parse(item.payload);
-  return fibReadingSchema.parse(item.payload);
+  if (item.type === "FIB_READING") return fibReadingSchema.parse(item.payload);
+  return fibRwSchema.parse(item.payload);
 }
 
 async function main(): Promise<void> {

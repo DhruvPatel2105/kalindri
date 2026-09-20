@@ -3,12 +3,14 @@ import { notFound } from "next/navigation";
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { startSession } from "@/lib/practice/startSession";
 import type { FibReadingPayload } from "@/lib/questions/schemas/fib-reading";
+import type { FibRwPayload } from "@/lib/questions/schemas/fib-rw";
 import type { McmReadingPayload } from "@/lib/questions/schemas/mcm-reading";
 import type { McsReadingPayload } from "@/lib/questions/schemas/mcs-reading";
 import type { ReorderParagraphPayload } from "@/lib/questions/schemas/reorder-paragraph";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
 
 import { PracticeQuestion } from "./PracticeQuestion";
+import { PracticeQuestionDropdownBlanks } from "./PracticeQuestionDropdownBlanks";
 import { PracticeQuestionMultiSelect } from "./PracticeQuestionMultiSelect";
 import { PracticeQuestionReorder } from "./PracticeQuestionReorder";
 import { PracticeQuestionWordBank } from "./PracticeQuestionWordBank";
@@ -23,10 +25,10 @@ import { PracticeQuestionWordBank } from "./PracticeQuestionWordBank";
  * task): resuming an in-progress session on reload is future work, so
  * lib/practice/getSession.ts isn't wired in here yet.
  *
- * Only MCS_READING, MCM_READING, REORDER_PARAGRAPH and FIB_READING have
- * seeded questions and UI so far; any other valid QuestionType surfaces
- * startSession's own clear "no published question available" error rather
- * than a fabricated message.
+ * Only MCS_READING, MCM_READING, REORDER_PARAGRAPH, FIB_READING and
+ * FIB_RW have seeded questions and UI so far; any other valid QuestionType
+ * surfaces startSession's own clear "no published question available"
+ * error rather than a fabricated message.
  */
 export default async function PracticeTypePage({
   params,
@@ -101,6 +103,18 @@ export default async function PracticeTypePage({
         sessionId={sessionId}
         parts={payload.passage_with_blanks.split(/\{\{\d+\}\}/)}
         wordBank={shuffle(payload.word_bank)}
+      />
+    );
+  } else if (question.type === "FIB_RW") {
+    const payload = question.payload as FibRwPayload;
+    // Never `correct_option` — only `options` — crosses this boundary
+    // before submission; that's the protected answer key.
+    questionUi = (
+      <PracticeQuestionDropdownBlanks
+        key={sessionId}
+        sessionId={sessionId}
+        parts={payload.passage_with_blanks.split(/\{\{\d+\}\}/)}
+        blanks={payload.blanks.map((blank) => ({ options: blank.options }))}
       />
     );
   } else {
