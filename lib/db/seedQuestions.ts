@@ -1,7 +1,7 @@
 /**
- * Seed script — inserts original practice questions: 3 MCS_READING, then 3
- * MCM_READING. Separate from lib/db/seed.ts (which only seeds the
- * organization) — deliberately not conflated with it.
+ * Seed script — inserts original practice questions: 3 MCS_READING, 3
+ * MCM_READING, then 3 REORDER_PARAGRAPH. Separate from lib/db/seed.ts
+ * (which only seeds the organization) — deliberately not conflated with it.
  *
  * Run with:  npm run db:seed:questions   (loads .env.local if present)
  * Idempotent: checks each question's external_id before inserting, so
@@ -24,6 +24,7 @@ import postgres from "postgres";
 
 import { mcmReadingSchema } from "@/lib/questions/schemas/mcm-reading";
 import { mcsReadingSchema } from "@/lib/questions/schemas/mcs-reading";
+import { reorderParagraphSchema } from "@/lib/questions/schemas/reorder-paragraph";
 
 import { organizations, questions } from "./schema";
 
@@ -52,7 +53,15 @@ interface McmSeedItem {
   };
 }
 
-type SeedItem = McsSeedItem | McmSeedItem;
+interface ReorderSeedItem {
+  externalId: string;
+  type: "REORDER_PARAGRAPH";
+  payload: {
+    boxes: string[];
+  };
+}
+
+type SeedItem = McsSeedItem | McmSeedItem | ReorderSeedItem;
 
 const SEED_ITEMS: SeedItem[] = [
   {
@@ -225,12 +234,50 @@ const SEED_ITEMS: SeedItem[] = [
       correct_option_ids: ["b", "d", "e"],
     },
   },
+  {
+    externalId: "REORDER-PARAGRAPH-SEED-1",
+    type: "REORDER_PARAGRAPH",
+    payload: {
+      boxes: [
+        "The company introduced a new workplace safety training module last quarter.",
+        "All employees were required to complete the training within thirty days of its release.",
+        "Supervisors then reviewed completion rates and followed up with anyone who had not finished.",
+        "A follow-up survey found that most employees felt more confident identifying hazards afterward.",
+        "The training is now scheduled to repeat annually for all staff.",
+      ],
+    },
+  },
+  {
+    externalId: "REORDER-PARAGRAPH-SEED-2",
+    type: "REORDER_PARAGRAPH",
+    payload: {
+      boxes: [
+        "The downtown farmers market began as a small weekend gathering of a dozen vendors.",
+        "Word spread quickly, and within two years the vendor list had tripled.",
+        "The city eventually closed two blocks of Main Street to accommodate the growing crowds.",
+        "Today the market draws visitors from neighbouring towns every Saturday.",
+      ],
+    },
+  },
+  {
+    externalId: "REORDER-PARAGRAPH-SEED-3",
+    type: "REORDER_PARAGRAPH",
+    payload: {
+      boxes: [
+        "New hires used to receive a thick binder of policies on their first day.",
+        "Feedback consistently showed that few employees ever read the binder in full.",
+        "The HR department replaced it with a short online course split into five modules.",
+        "Each module ends with a brief quiz to confirm the material was understood.",
+        "Manager surveys since the change report faster ramp-up times for new employees.",
+      ],
+    },
+  },
 ];
 
 function validatePayload(item: SeedItem): unknown {
-  return item.type === "MCS_READING"
-    ? mcsReadingSchema.parse(item.payload)
-    : mcmReadingSchema.parse(item.payload);
+  if (item.type === "MCS_READING") return mcsReadingSchema.parse(item.payload);
+  if (item.type === "MCM_READING") return mcmReadingSchema.parse(item.payload);
+  return reorderParagraphSchema.parse(item.payload);
 }
 
 async function main(): Promise<void> {
