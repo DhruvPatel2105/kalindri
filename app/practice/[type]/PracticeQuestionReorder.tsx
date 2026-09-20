@@ -288,6 +288,34 @@ export function PracticeQuestionReorder({
                   </div>
                 ))}
               </div>
+
+              {/*
+                The full answer key — separate from the pair breakdown
+                above on purpose: "which specific pair did I break" and
+                "what was the actual right answer" are different questions.
+                Only ever rendered here, post-submission, from
+                result.questionSnapshot — never before the student submits.
+              */}
+              {correctOrder.length > 0 ? (
+                <div className="flex flex-col gap-2 border-t border-[#ddd9d0] pt-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-[#5c6a68]">
+                    Correct order
+                  </p>
+                  <ol className="flex flex-col gap-1.5">
+                    {correctOrder.map((text, index) => (
+                      <li
+                        key={index}
+                        className="flex items-start gap-2 text-sm"
+                      >
+                        <span className="w-4 flex-none font-mono text-xs font-medium text-[#1f6f6b]">
+                          {index + 1}.
+                        </span>
+                        <span className="text-[#1e2a2a]">{text}</span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+              ) : null}
             </>
           ) : (
             <p className="text-sm text-[#5c6a68]">{result.message}</p>
