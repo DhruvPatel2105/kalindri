@@ -96,4 +96,30 @@ describe("scoreNegativeMarking", () => {
       incorrectCount: 1,
     });
   });
+
+  /**
+   * maxScore must always be DERIVED from the question's actual
+   * correct_option_ids (correctSelections.size), never a hardcoded or
+   * coincidentally-right value. Proven generally: for every count from 1
+   * to 4, selecting EXACTLY the correct options must score
+   * score === maxScore === that count — not "2" because some earlier test
+   * happened to use 2 correct answers.
+   */
+  it.each([1, 2, 3, 4])(
+    "selecting exactly the %i correct option(s) scores score === maxScore === %i",
+    (count) => {
+      const correctSelections = Array.from(
+        { length: count },
+        (_, i) => `option-${i}`,
+      );
+      const result = scoreNegativeMarking({
+        correctSelections,
+        studentSelections: [...correctSelections],
+      });
+      expect(result.maxScore).toBe(count);
+      expect(result.score).toBe(count);
+      expect(result.correctCount).toBe(count);
+      expect(result.incorrectCount).toBe(0);
+    },
+  );
 });
