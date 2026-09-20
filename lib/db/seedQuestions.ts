@@ -1,7 +1,8 @@
 /**
  * Seed script — inserts original practice questions: 3 MCS_READING, 3
- * MCM_READING, then 3 REORDER_PARAGRAPH. Separate from lib/db/seed.ts
- * (which only seeds the organization) — deliberately not conflated with it.
+ * MCM_READING, 3 REORDER_PARAGRAPH, then 3 FIB_READING. Separate from
+ * lib/db/seed.ts (which only seeds the organization) — deliberately not
+ * conflated with it.
  *
  * Run with:  npm run db:seed:questions   (loads .env.local if present)
  * Idempotent: checks each question's external_id before inserting, so
@@ -22,6 +23,7 @@ import { and, eq } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
+import { fibReadingSchema } from "@/lib/questions/schemas/fib-reading";
 import { mcmReadingSchema } from "@/lib/questions/schemas/mcm-reading";
 import { mcsReadingSchema } from "@/lib/questions/schemas/mcs-reading";
 import { reorderParagraphSchema } from "@/lib/questions/schemas/reorder-paragraph";
@@ -61,7 +63,17 @@ interface ReorderSeedItem {
   };
 }
 
-type SeedItem = McsSeedItem | McmSeedItem | ReorderSeedItem;
+interface FibReadingSeedItem {
+  externalId: string;
+  type: "FIB_READING";
+  payload: {
+    passage_with_blanks: string;
+    word_bank: string[];
+    correct_answers: string[];
+  };
+}
+
+type SeedItem = McsSeedItem | McmSeedItem | ReorderSeedItem | FibReadingSeedItem;
 
 const SEED_ITEMS: SeedItem[] = [
   {
@@ -272,12 +284,80 @@ const SEED_ITEMS: SeedItem[] = [
       ],
     },
   },
+  {
+    // 4 blanks, word_bank has 6 entries — 2 more than there are gaps, per
+    // docs/01-question-types.md §11: "more distractor words in the bank
+    // than there are blanks" is what this type is specifically testing.
+    externalId: "FIB-READING-SEED-1",
+    type: "FIB_READING",
+    payload: {
+      passage_with_blanks:
+        "Employees at Larkspur Logistics must {{1}} all business expenses " +
+        "within thirty days of the {{2}} being incurred. Receipts should " +
+        "be {{3}} to the finance team through the online portal rather " +
+        "than {{4}} in person.",
+      word_bank: [
+        "submit",
+        "expense",
+        "uploaded",
+        "delivered",
+        "ignored",
+        "printed",
+      ],
+      correct_answers: ["submit", "expense", "uploaded", "delivered"],
+    },
+  },
+  {
+    externalId: "FIB-READING-SEED-2",
+    type: "FIB_READING",
+    payload: {
+      passage_with_blanks:
+        "The city's updated noise bylaw {{1}} construction work before 7 " +
+        "a.m. on weekdays and before 9 a.m. on weekends. Residents who " +
+        "wish to {{2}} a noise complaint can do so through the bylaw " +
+        "office's online form. Officers who {{3}} a violation may issue " +
+        "a warning before any {{4}} is applied.",
+      word_bank: [
+        "restricts",
+        "file",
+        "confirm",
+        "fine",
+        "encourage",
+        "postpone",
+      ],
+      correct_answers: ["restricts", "file", "confirm", "fine"],
+    },
+  },
+  {
+    externalId: "FIB-READING-SEED-3",
+    type: "FIB_READING",
+    payload: {
+      passage_with_blanks:
+        "Members who place a hold on a library item will receive an " +
+        "email once the item is {{1}} for pickup. Items must be " +
+        "collected within seven days, or the hold will be {{2}} and the " +
+        "item returned to general circulation. Members with more than " +
+        "three {{3}} holds may be {{4}} from placing new ones until " +
+        "older holds are cleared.",
+      word_bank: [
+        "available",
+        "cancelled",
+        "overdue",
+        "restricted",
+        "renewed",
+        "archived",
+      ],
+      correct_answers: ["available", "cancelled", "overdue", "restricted"],
+    },
+  },
 ];
 
 function validatePayload(item: SeedItem): unknown {
   if (item.type === "MCS_READING") return mcsReadingSchema.parse(item.payload);
   if (item.type === "MCM_READING") return mcmReadingSchema.parse(item.payload);
-  return reorderParagraphSchema.parse(item.payload);
+  if (item.type === "REORDER_PARAGRAPH")
+    return reorderParagraphSchema.parse(item.payload);
+  return fibReadingSchema.parse(item.payload);
 }
 
 async function main(): Promise<void> {

@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { startSession } from "@/lib/practice/startSession";
+import type { FibReadingPayload } from "@/lib/questions/schemas/fib-reading";
 import type { McmReadingPayload } from "@/lib/questions/schemas/mcm-reading";
 import type { McsReadingPayload } from "@/lib/questions/schemas/mcs-reading";
 import type { ReorderParagraphPayload } from "@/lib/questions/schemas/reorder-paragraph";
@@ -10,6 +11,7 @@ import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
 import { PracticeQuestion } from "./PracticeQuestion";
 import { PracticeQuestionMultiSelect } from "./PracticeQuestionMultiSelect";
 import { PracticeQuestionReorder } from "./PracticeQuestionReorder";
+import { PracticeQuestionWordBank } from "./PracticeQuestionWordBank";
 
 /**
  * Proves the practice-session engine works end to end. Minimal styling,
@@ -21,10 +23,10 @@ import { PracticeQuestionReorder } from "./PracticeQuestionReorder";
  * task): resuming an in-progress session on reload is future work, so
  * lib/practice/getSession.ts isn't wired in here yet.
  *
- * Only MCS_READING, MCM_READING and REORDER_PARAGRAPH have seeded questions
- * and UI so far; any other valid QuestionType surfaces startSession's own
- * clear "no published question available" error rather than a fabricated
- * message.
+ * Only MCS_READING, MCM_READING, REORDER_PARAGRAPH and FIB_READING have
+ * seeded questions and UI so far; any other valid QuestionType surfaces
+ * startSession's own clear "no published question available" error rather
+ * than a fabricated message.
  */
 export default async function PracticeTypePage({
   params,
@@ -83,6 +85,22 @@ export default async function PracticeTypePage({
           key: `box-${index}`,
           text,
         }))}
+      />
+    );
+  } else if (question.type === "FIB_READING") {
+    const payload = question.payload as FibReadingPayload;
+    // Splitting on {{n}} markers is safe pre-submission — the markers carry
+    // no answer content, only where the gaps are. `word_bank`'s display
+    // order is shuffled for the same reason REORDER_PARAGRAPH's boxes are:
+    // if it weren't, and the seed content happened to list correct answers
+    // in blank order (a real risk when authoring this content by hand), the
+    // bank's order alone could give the answer away.
+    questionUi = (
+      <PracticeQuestionWordBank
+        key={sessionId}
+        sessionId={sessionId}
+        parts={payload.passage_with_blanks.split(/\{\{\d+\}\}/)}
+        wordBank={shuffle(payload.word_bank)}
       />
     );
   } else {
