@@ -42,13 +42,13 @@ export default async function PracticeHistoryPage({
             ← Dashboard
           </Link>
           <span className="text-[#ddd9d0]">|</span>
-          <span className="text-sm font-semibold text-[#1e2a2a]">Practice history</span>
+          <span className="text-sm font-semibold text-[#1e2a2a]">Test history</span>
         </div>
       </header>
 
       <main className="mx-auto flex max-w-2xl flex-col gap-5 px-4 py-8">
         <div>
-          <h1 className="text-xl font-semibold text-[#1e2a2a]">Practice history</h1>
+          <h1 className="text-xl font-semibold text-[#1e2a2a]">Test history</h1>
           <p className="mt-1 text-sm text-[#5c6a68]">
             {total === 0
               ? "You haven't started a practice test yet."

@@ -5,12 +5,20 @@
  * Source files are plain text, one question per block. A block starts with a
  * header line `#<number> <title>` and runs until the next header. Lines
  * starting with `//` are comments and ignored, so templates can document
- * themselves.
+ * themselves — EXCEPT a comment that is just `// EASY`, `// MEDIUM` or
+ * `// HARD` (any case): that is a difficulty section marker, and every
+ * question after it (until the next marker) is imported with that difficulty.
  */
+
+export type ImportDifficulty = "easy" | "medium" | "hard";
+
+const DIFFICULTY_MARKER = /^\/\/\s*(easy|medium|hard)\s*$/i;
 
 export interface RawBlock {
   number: number;
   title: string;
+  /** From the most recent `// EASY|MEDIUM|HARD` marker above this block, if any. */
+  difficulty: ImportDifficulty | null;
   /** Body lines, comments removed, leading/trailing blank lines trimmed. */
   lines: string[];
 }
@@ -28,10 +36,15 @@ export function splitBlocks(text: string): SplitResult {
   const errors: string[] = [];
   const seen = new Set<number>();
   let current: RawBlock | null = null;
+  let difficulty: ImportDifficulty | null = null;
 
   for (const rawLine of text.replace(/\r\n?/g, "\n").split("\n")) {
     const line = rawLine.trimEnd();
-    if (line.trimStart().startsWith("//")) continue;
+    if (line.trimStart().startsWith("//")) {
+      const marker = DIFFICULTY_MARKER.exec(line.trim());
+      if (marker) difficulty = (marker[1] ?? "").toLowerCase() as ImportDifficulty;
+      continue;
+    }
 
     const header = HEADER_PATTERN.exec(line.trim());
     if (header) {
@@ -40,7 +53,7 @@ export function splitBlocks(text: string): SplitResult {
         errors.push(`Question #${number} appears more than once.`);
       }
       seen.add(number);
-      current = { number, title: (header[2] ?? "").trim(), lines: [] };
+      current = { number, title: (header[2] ?? "").trim(), difficulty, lines: [] };
       blocks.push(current);
       continue;
     }
@@ -108,7 +121,14 @@ export function findDuplicates(words: readonly string[]): string[] {
 
 /** The shape every per-type parser returns for one question. */
 export type ParsedQuestion<P> =
-  | { ok: true; number: number; title: string; payload: P }
+  | {
+      ok: true;
+      number: number;
+      title: string;
+      /** The difficulty section the question was under in the file; null if none. */
+      difficulty: ImportDifficulty | null;
+      payload: P;
+    }
   | { ok: false; number: number; title: string; errors: string[] };
 
 export interface ParsedFile<P> {

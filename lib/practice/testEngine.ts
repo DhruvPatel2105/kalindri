@@ -54,8 +54,9 @@ import {
   scoreDeterministic,
 } from "@/lib/scoring/registry";
 
+import { pickQuestionIds } from "./questionCount";
 import { retryLabel } from "./retry";
-import { scoringRulesFor } from "./scoringRules";
+import { SCORER_VERSION, scoringRulesFor } from "./scoringRules";
 import { validateDeterministicResponse } from "./responseSchemas";
 import { buildQuestionReview, type QuestionReview } from "./reviewModel";
 import {
@@ -113,10 +114,18 @@ export interface ActiveTest {
 /*  Start / resume                                                             */
 /* -------------------------------------------------------------------------- */
 
+/**
+ * Starts the student's test of a set, or resumes the one they left unfinished
+ * (an unfinished test keeps the number of questions it started with).
+ * `options.count` is how many of the set's questions to sit: that many are
+ * picked at random, kept in the set's own order, and frozen into the session;
+ * omitted (or more than the set has) means the whole set.
+ */
 export async function startOrResumeTest(
   user: SessionUser,
   type: QuestionType,
   setId: string,
+  options: { count?: number } = {},
 ): Promise<ActiveTest> {
   const db = getDb();
 
@@ -148,6 +157,7 @@ export async function startOrResumeTest(
     .where(
       and(
         eq(sessions.userId, user.id),
+        eq(sessions.mode, "practice"),
         eq(sessions.questionSetId, set.id),
         eq(sessions.status, "in_progress"),
         // A retry in progress is resumed from its own page, never mistaken
@@ -208,6 +218,19 @@ export async function startOrResumeTest(
     throw new QuestionNotAvailableError(
       `Question set ${setId} has no published questions.`,
     );
+  }
+
+  // A shorter test: a random selection of the set's questions, in set order.
+  if (options.count !== undefined) {
+    const keep = new Set(
+      pickQuestionIds(
+        snapshots.map((snapshot) => snapshot.id),
+        options.count,
+      ),
+    );
+    const selected = snapshots.filter((snapshot) => keep.has(snapshot.id));
+    snapshots.length = 0;
+    snapshots.push(...selected);
   }
 
   // A full practice is the root of its own retry journey, so the id is chosen
@@ -436,43 +459,67 @@ export async function scoreUnscoredAttempts(sessionId: string): Promise<void> {
   for (const attempt of pending) {
     const type = typeById.get(attempt.questionId);
     if (!type || !isDeterministicType(type)) continue;
+    await recordAttemptScore({
+      orgId: session.orgId,
+      attemptId: attempt.id,
+      type,
+      payload: attempt.payload,
+      response: attempt.response,
+    });
+  }
+}
 
-    try {
-      const result = scoreDeterministic(
-        type,
-        attempt.payload as never,
-        attempt.response as never,
-      );
+/**
+ * Scores ONE already-saved attempt and records it: a `scores` row, the raw
+ * scorer output in `score_runs` (CLAUDE.md #6) and `attempts.is_correct`. If
+ * the scorer throws, an error run is recorded instead and nothing is lost —
+ * the attempt stays unscored and can be retried. Shared by the test engine
+ * and the Practice (learn) engine. Never throws.
+ */
+export async function recordAttemptScore(input: {
+  orgId: string;
+  attemptId: string;
+  type: QuestionType;
+  payload: unknown;
+  response: unknown;
+}): Promise<void> {
+  const db = getDb();
+  if (!isDeterministicType(input.type)) return;
 
-      await db.insert(scores).values({
-        orgId: session.orgId,
-        attemptId: attempt.id,
-        trait: "overall",
-        score: String(result.score),
-        maxScore: String(result.maxScore),
-        scorerVersion: "deterministic-v1",
-      });
-      await db.insert(scoreRuns).values({
-        orgId: session.orgId,
-        attemptId: attempt.id,
-        scorerType: "deterministic",
-        rawOutput: result,
-        status: "success",
-      });
-      await db
-        .update(attempts)
-        .set({ isCorrect: result.score >= result.maxScore && result.maxScore > 0 })
-        .where(eq(attempts.id, attempt.id));
-    } catch (err) {
-      // Keep going: one bad question must not stop the rest being scored.
-      await db.insert(scoreRuns).values({
-        orgId: session.orgId,
-        attemptId: attempt.id,
-        scorerType: "deterministic",
-        status: "error",
-        errorMessage: err instanceof Error ? err.message : String(err),
-      });
-    }
+  try {
+    const result = scoreDeterministic(
+      input.type,
+      input.payload as never,
+      input.response as never,
+    );
+
+    await db.insert(scores).values({
+      orgId: input.orgId,
+      attemptId: input.attemptId,
+      trait: "overall",
+      score: String(result.score),
+      maxScore: String(result.maxScore),
+      scorerVersion: SCORER_VERSION,
+    });
+    await db.insert(scoreRuns).values({
+      orgId: input.orgId,
+      attemptId: input.attemptId,
+      scorerType: "deterministic",
+      rawOutput: result,
+      status: "success",
+    });
+    await db
+      .update(attempts)
+      .set({ isCorrect: result.score >= result.maxScore && result.maxScore > 0 })
+      .where(eq(attempts.id, input.attemptId));
+  } catch (err) {
+    await db.insert(scoreRuns).values({
+      orgId: input.orgId,
+      attemptId: input.attemptId,
+      scorerType: "deterministic",
+      status: "error",
+      errorMessage: err instanceof Error ? err.message : String(err),
+    });
   }
 }
 

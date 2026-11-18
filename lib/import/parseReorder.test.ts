@@ -81,3 +81,15 @@ describe("parseReorderFile", () => {
     expect(items.map((i) => i.ok)).toEqual([true, false]);
   });
 });
+
+describe("parseReorderFile difficulty", () => {
+  it("passes the // EASY|MEDIUM|HARD section marker through to each question", () => {
+    const { items } = parseReorderFile(`// EASY\n${GOOD}\n// HARD\n${GOOD.replace("#1", "#2")}`);
+    expect(items.map((i) => (i.ok ? i.difficulty : "bad"))).toEqual(["easy", "hard"]);
+  });
+
+  it("no marker means no difficulty", () => {
+    const { items } = parseReorderFile(GOOD);
+    expect(items[0]?.ok && items[0].difficulty).toBeNull();
+  });
+});

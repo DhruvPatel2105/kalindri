@@ -117,7 +117,13 @@ function parseBlock(block: RawBlock): ParsedQuestion<ReorderParagraphPayload> {
       errors: parsed.error.issues.map((i) => i.message),
     };
   }
-  return { ok: true, number: block.number, title, payload: parsed.data };
+  return {
+    ok: true,
+    number: block.number,
+    title,
+    difficulty: block.difficulty,
+    payload: parsed.data,
+  };
 }
 
 export function parseReorderFile(

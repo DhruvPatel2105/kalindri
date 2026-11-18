@@ -13,6 +13,13 @@
  * in import-templates/. Keep your real files in import-data/ (git-ignored) —
  * the question bank must not end up in the repository.
  *
+ * Difficulty: a comment line that is just `// EASY`, `// MEDIUM` or `// HARD`
+ * sets the difficulty of every question below it until the next marker. It is
+ * stored on the question. On an already-imported question it is filled in only
+ * if the question has no difficulty yet — a rating is never overwritten.
+ * `--difficulty-only` does just that for questions already in the database:
+ * it sets missing difficulties and never inserts, publishes or changes content.
+ *
  * Safe by design:
  *   - Every question is parsed and validated against its real Zod schema
  *     FIRST. If anything is wrong, all problems are printed and NOTHING is
@@ -72,7 +79,7 @@ function isKind(value: string): value is Kind {
 }
 
 const USAGE =
-  "Usage: npm run import-questions -- <reorder|fib-drag|fib-dropdown> <file> [--dry-run] [--publish]";
+  "Usage: npm run import-questions -- <reorder|fib-drag|fib-dropdown> <file> [--dry-run] [--publish] [--difficulty-only]";
 
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({
@@ -80,6 +87,7 @@ async function main(): Promise<void> {
     options: {
       "dry-run": { type: "boolean", default: false },
       publish: { type: "boolean", default: false },
+      "difficulty-only": { type: "boolean", default: false },
     },
   });
 
@@ -141,18 +149,38 @@ async function main(): Promise<void> {
     let inserted = 0;
     let published = 0;
     let skipped = 0;
+    let difficultySet = 0;
 
     for (const item of valid) {
       const externalId = `${kind.prefix}-${String(item.number).padStart(3, "0")}`;
 
       const [existing] = await db
-        .select({ id: questions.id, status: questions.status })
+        .select({
+          id: questions.id,
+          status: questions.status,
+          difficulty: questions.difficulty,
+        })
         .from(questions)
         .where(
           and(eq(questions.orgId, org.id), eq(questions.externalId, externalId)),
         )
         .limit(1);
       if (existing) {
+        // A difficulty from the file fills a missing one; an existing rating
+        // is never overwritten (a mismatch is reported, not applied).
+        if (item.difficulty && existing.difficulty === null) {
+          await db
+            .update(questions)
+            .set({ difficulty: item.difficulty })
+            .where(eq(questions.id, existing.id));
+          console.log(`Set difficulty of ${externalId} to ${item.difficulty}.`);
+          difficultySet++;
+        } else if (item.difficulty && existing.difficulty !== item.difficulty) {
+          console.log(
+            `Note: ${externalId} is rated ${existing.difficulty} in the database but ${item.difficulty} in the file — left as is.`,
+          );
+        }
+        if (values["difficulty-only"]) continue;
         // Never overwrite content; --publish only promotes an existing draft.
         if (values.publish && existing.status === "draft") {
           await db
@@ -168,12 +196,19 @@ async function main(): Promise<void> {
         continue;
       }
 
+      if (values["difficulty-only"]) {
+        console.log(`Skipping ${externalId} — not in the database (--difficulty-only never inserts).`);
+        skipped++;
+        continue;
+      }
+
       await db.insert(questions).values({
         orgId: org.id,
         externalId,
         type: kind.type,
         part: READING_PART,
         payload: item.payload,
+        difficulty: item.difficulty,
         status,
         isActive: true,
         source: "institute",
@@ -185,7 +220,7 @@ async function main(): Promise<void> {
     }
 
     console.log(
-      `Done: ${inserted} inserted, ${published} existing draft(s) published, ${skipped} skipped.`,
+      `Done: ${inserted} inserted, ${published} existing draft(s) published, ${difficultySet} difficulty value(s) set, ${skipped} skipped.`,
     );
     if (inserted > 0 && status === "draft") {
       console.log(

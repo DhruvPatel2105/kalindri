@@ -11,7 +11,7 @@ import { resultKind, type QuestionResultKind } from "@/lib/practice/testResults"
 import { QUESTION_TYPES } from "@/lib/questions/types";
 
 import { TYPE_LABELS } from "../../../../typeLabels";
-import { ReviewQuestion } from "./ReviewQuestion";
+import { ReviewQuestion } from "../../../../../ReviewQuestion";
 
 /**
  * Answer review, one question at a time: your answer beside the correct one,

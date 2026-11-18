@@ -19,6 +19,7 @@ import "server-only";
 import { eq } from "drizzle-orm";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { getDb } from "@/lib/db";
 import { activeSessions, users } from "@/lib/db/schema";
@@ -28,7 +29,7 @@ import { sessionMatches } from "./sessionMatch";
 import { shouldRefreshLastSeen } from "./sessionFreshness";
 import { SESSION_TOKEN_COOKIE } from "./sessionToken";
 
-export async function requireActiveSession() {
+async function requireActiveSessionOnce() {
   const supabase = await createClient();
   const {
     data: { user },
@@ -77,3 +78,10 @@ export async function requireActiveSession() {
 
   return appUser;
 }
+
+/**
+ * Memoised per request: the shared practice layout (navigation bar) and the
+ * page under it both call this, and React's `cache` makes that one check, not
+ * two. Behaviour is otherwise identical.
+ */
+export const requireActiveSession = cache(requireActiveSessionOnce);

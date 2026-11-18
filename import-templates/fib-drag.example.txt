@@ -1,3 +1,6 @@
+// Difficulty: a line that is just // EASY, // MEDIUM or // HARD sets the difficulty of every question below it
+// until the next marker. Any other // line is an ordinary comment.
+// EASY
 // FIB_READING (drag from a word bank) — one question per block.
 // Put each CORRECT answer in [square brackets] where the blank goes, in order.
 // "Unused:" lists the wrong words (at least one). Each word may appear only

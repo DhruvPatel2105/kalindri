@@ -14,16 +14,23 @@ const GREEN = "border-[#1f6f6b] bg-[#f4faf9]";
 const RED = "border-[#b0472f] bg-[#fdf6f5]";
 const PLAIN = "border-[#ddd9d0] bg-white";
 
-export function ReviewQuestion({ review }: { review: QuestionReview }) {
+export function ReviewQuestion({
+  review,
+  mode = "test",
+}: {
+  review: QuestionReview;
+  /** Practice words an unattempted question as "answer shown" rather than a scored zero. */
+  mode?: "test" | "practice";
+}) {
   return (
     <div className="flex flex-col gap-5">
-      <Banner review={review} />
+      <Banner review={review} mode={mode} />
       <Body review={review} />
     </div>
   );
 }
 
-function Banner({ review }: { review: QuestionReview }) {
+function Banner({ review, mode }: { review: QuestionReview; mode: "test" | "practice" }) {
   if (review.type === "UNSUPPORTED") {
     return <p className="text-sm text-[#5c6a68]">No review is available for this question type yet.</p>;
   }
@@ -36,15 +43,22 @@ function Banner({ review }: { review: QuestionReview }) {
   } as const;
   const [label, tone] = styles[review.kind];
 
+  const practiceReveal = mode === "practice" && review.kind === "unanswered";
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-3">
-        <span className={`rounded px-2.5 py-1 text-xs font-semibold ${tone}`}>{label}</span>
-        <span className="text-sm font-semibold text-[#1e2a2a]">{marks} marks</span>
+        <span className={`rounded px-2.5 py-1 text-xs font-semibold ${tone}`}>
+          {practiceReveal ? "Answer shown" : label}
+        </span>
+        {practiceReveal ? null : (
+          <span className="text-sm font-semibold text-[#1e2a2a]">{marks} marks</span>
+        )}
       </div>
       {review.kind === "unanswered" ? (
         <p className="text-sm text-[#5c6a68]">
-          You didn&apos;t answer this question, so it scored 0. The correct answer is shown below.
+          {practiceReveal
+            ? "You haven't answered this question yet — the correct answer is shown below. Try Again to have a go."
+            : "You didn't answer this question, so it scored 0. The correct answer is shown below."}
         </p>
       ) : null}
     </div>

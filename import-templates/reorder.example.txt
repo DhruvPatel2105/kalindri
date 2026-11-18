@@ -1,3 +1,6 @@
+// Difficulty: a line that is just // EASY, // MEDIUM or // HARD sets the difficulty of every question below it
+// until the next marker. Any other // line is an ordinary comment.
+// EASY
 // REORDER_PARAGRAPH — one question per block, starting with "#<number> <title>".
 // "Answer:" is the READING ORDER of the listed sentences: "3, 1, 2, 4" means
 // read sentence 3 first, then 1, then 2, then 4. List the sentences in the

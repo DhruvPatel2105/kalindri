@@ -19,6 +19,7 @@
     "create-admin": "tsx --env-file-if-exists=.env.local lib/db/create-admin.ts",
     "verify-question": "tsx --env-file-if-exists=.env.local lib/db/verifySeedQuestion.ts",
     "import-questions": "tsx --env-file-if-exists=.env.local lib/db/importQuestions.ts",
+    "db:seed:weights": "tsx --env-file-if-exists=.env.local lib/db/seedSkillWeights.ts",
     "create-sets": "tsx --env-file-if-exists=.env.local lib/db/createQuestionSets.ts"
   },
   "dependencies": {

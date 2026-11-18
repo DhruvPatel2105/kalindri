@@ -62,7 +62,7 @@ export async function ProgressOverview({ user }: { user: SessionUser }) {
             href="/practice/history"
             className="text-sm font-medium text-[#1f6f6b] hover:underline"
           >
-            All practice history →
+            All test history →
           </Link>
         ) : null}
       </div>

@@ -1,3 +1,6 @@
+// Difficulty: a line that is just // EASY, // MEDIUM or // HARD sets the difficulty of every question below it
+// until the next marker. Any other // line is an ordinary comment.
+// EASY
 // FIB_RW (dropdown per blank) — one question per block.
 // Write every blank as [correct | wrong | wrong | wrong]: EXACTLY 4 options,
 // and the FIRST one is the correct answer. (The importer shuffles the order

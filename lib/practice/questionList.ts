@@ -17,6 +17,56 @@ export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
   hard: "Hard",
 };
 
+/** The 1-based page that holds the item at 0-based `index`, for pages of `pageSize`. */
+export function pageOfIndex(index: number, pageSize: number = PAGE_SIZE): number {
+  if (!Number.isInteger(index) || index < 0) return 1;
+  return Math.floor(index / pageSize) + 1;
+}
+
+export interface DifficultyMix {
+  easy: number;
+  medium: number;
+  hard: number;
+  unrated: number;
+}
+
+/** Counts a list of question difficulties (null = not rated yet). */
+export function countDifficulties(difficulties: readonly (Difficulty | null)[]): DifficultyMix {
+  const mix: DifficultyMix = { easy: 0, medium: 0, hard: 0, unrated: 0 };
+  for (const d of difficulties) mix[d ?? "unrated"] += 1;
+  return mix;
+}
+
+export type SetDifficulty =
+  | { kind: "single"; difficulty: Difficulty }
+  | { kind: "mixed" }
+  | { kind: "unrated" };
+
+/**
+ * What difficulty tag a set shows. The set's own rating wins if it has one;
+ * otherwise it is judged from its questions: all rated the same → that
+ * difficulty, rated differently → "mixed", none rated → "unrated". Questions
+ * with no rating don't make a set "mixed" (they are still in the breakdown).
+ */
+export function describeSetDifficulty(
+  setDifficulty: Difficulty | null,
+  mix: DifficultyMix,
+): SetDifficulty {
+  if (setDifficulty) return { kind: "single", difficulty: setDifficulty };
+  const present = (["easy", "medium", "hard"] as const).filter((d) => mix[d] > 0);
+  if (present.length === 0) return { kind: "unrated" };
+  if (present.length === 1 && present[0]) return { kind: "single", difficulty: present[0] };
+  return { kind: "mixed" };
+}
+
+/** "4 easy · 9 medium · 5 hard · 3 unrated" — only the parts that are present. */
+export function difficultyBreakdown(mix: DifficultyMix): string {
+  return (["easy", "medium", "hard", "unrated"] as const)
+    .filter((d) => mix[d] > 0)
+    .map((d) => `${mix[d]} ${d}`)
+    .join(" · ");
+}
+
 /** `?page=` as a positive integer; anything missing, malformed or < 1 is page 1. */
 export function parsePageParam(raw: string | string[] | undefined): number {
   const value = Array.isArray(raw) ? raw[0] : raw;

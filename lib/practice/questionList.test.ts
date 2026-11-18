@@ -4,6 +4,10 @@ import {
   pageNumbers,
   paginate,
   parsePageParam,
+  countDifficulties,
+  describeSetDifficulty,
+  pageOfIndex,
+  difficultyBreakdown,
   questionCountLabel,
 } from "./questionList";
 
@@ -85,5 +89,61 @@ describe("questionCountLabel", () => {
 
   it("singularises 1", () => {
     expect(questionCountLabel(1)).toBe("1 question");
+  });
+});
+
+describe("set difficulty", () => {
+  it("counts question difficulties, null as unrated", () => {
+    expect(countDifficulties(["easy", "easy", "hard", null])).toEqual({ easy: 2, medium: 0, hard: 1, unrated: 1 });
+    expect(countDifficulties([])).toEqual({ easy: 0, medium: 0, hard: 0, unrated: 0 });
+  });
+
+  it("the set's own rating wins", () => {
+    expect(describeSetDifficulty("hard", countDifficulties(["easy", "medium"]))).toEqual({ kind: "single", difficulty: "hard" });
+  });
+
+  it("all questions the same difficulty gives that difficulty", () => {
+    expect(describeSetDifficulty(null, countDifficulties(["medium", "medium"]))).toEqual({ kind: "single", difficulty: "medium" });
+  });
+
+  it("different difficulties give mixed", () => {
+    expect(describeSetDifficulty(null, countDifficulties(["easy", "hard"]))).toEqual({ kind: "mixed" });
+  });
+
+  it("unrated questions don't make a set mixed or hide its difficulty", () => {
+    expect(describeSetDifficulty(null, countDifficulties(["easy", "easy", null]))).toEqual({ kind: "single", difficulty: "easy" });
+  });
+
+  it("nothing rated is unrated", () => {
+    expect(describeSetDifficulty(null, countDifficulties([null, null]))).toEqual({ kind: "unrated" });
+    expect(describeSetDifficulty(null, countDifficulties([]))).toEqual({ kind: "unrated" });
+  });
+
+  it("the breakdown lists only what is present, in a fixed order", () => {
+    expect(difficultyBreakdown({ easy: 4, medium: 9, hard: 5, unrated: 0 })).toBe("4 easy · 9 medium · 5 hard");
+    expect(difficultyBreakdown({ easy: 0, medium: 0, hard: 2, unrated: 3 })).toBe("2 hard · 3 unrated");
+  });
+});
+
+describe("pageOfIndex", () => {
+  it("maps a 0-based item index to its 1-based page of 10", () => {
+    expect(pageOfIndex(0)).toBe(1);
+    expect(pageOfIndex(9)).toBe(1);
+    expect(pageOfIndex(10)).toBe(2);
+    expect(pageOfIndex(14)).toBe(2);
+    expect(pageOfIndex(20)).toBe(3);
+  });
+
+  it("falls back to page 1 for invalid indexes", () => {
+    for (const bad of [-1, 1.5, Number.NaN]) expect(pageOfIndex(bad)).toBe(1);
+  });
+
+  it("agrees with paginate's offsets", () => {
+    for (let i = 0; i < 35; i++) {
+      const page = pageOfIndex(i);
+      const { offset } = paginate(35, page);
+      expect(i).toBeGreaterThanOrEqual(offset);
+      expect(i).toBeLessThan(offset + 10);
+    }
   });
 });

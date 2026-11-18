@@ -58,3 +58,45 @@ describe("joinLines / findDuplicates", () => {
     ]);
   });
 });
+
+describe("splitBlocks difficulty markers", () => {
+  const text = [
+    "// EASY",
+    "#1 A",
+    "body",
+    "",
+    "#2 B",
+    "body",
+    "// Medium",
+    "#3 C",
+    "body",
+    "  // hard  ",
+    "#4 D",
+    "body",
+  ].join("\n");
+
+  it("gives each question the most recent // EASY|MEDIUM|HARD marker above it", () => {
+    const { blocks } = splitBlocks(text);
+    expect(blocks.map((b) => [b.number, b.difficulty])).toEqual([
+      [1, "easy"],
+      [2, "easy"],
+      [3, "medium"],
+      [4, "hard"],
+    ]);
+  });
+
+  it("a marker doesn't leak into the question body, and is case and spacing tolerant", () => {
+    const { blocks } = splitBlocks(text);
+    expect(blocks[1]?.lines).toEqual(["body"]);
+  });
+
+  it("questions before any marker have no difficulty", () => {
+    const { blocks } = splitBlocks("#1 A\nbody\n// HARD\n#2 B\nbody");
+    expect(blocks.map((b) => b.difficulty)).toEqual([null, "hard"]);
+  });
+
+  it("other comments are still just comments, not markers", () => {
+    const { blocks } = splitBlocks("// easy to read, this one\n// EASY!\n#1 A\nbody");
+    expect(blocks[0]?.difficulty).toBeNull();
+  });
+});

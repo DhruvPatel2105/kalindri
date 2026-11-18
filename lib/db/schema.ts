@@ -117,6 +117,14 @@ export const practiceSessionType = pgEnum("session_type", [
   "INCORRECT_PRACTICE",
 ]);
 
+/** The colour a student bookmarked a question with. */
+export const bookmarkColor = pgEnum("bookmark_color", [
+  "red",
+  "orange",
+  "yellow",
+  "green",
+]);
+
 export const attemptStatus = pgEnum("attempt_status", [
   "abandoned",
   "submitted",
@@ -319,6 +327,36 @@ export const questionSets = pgTable("question_sets", {
     .notNull()
     .defaultNow(),
 });
+
+/**
+ * A student's bookmark on a question: one colour per (student, question),
+ * changed in place or removed. It belongs to the question, not to any session,
+ * so it shows wherever the question appears. Content is never copied here.
+ */
+export const questionBookmarks = pgTable(
+  "question_bookmarks",
+  {
+    id: pkId(),
+    orgId: orgId(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    questionId: uuid("question_id")
+      .notNull()
+      .references(() => questions.id),
+    color: bookmarkColor("color").notNull(),
+    createdAt: createdAt(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("question_bookmarks_user_question_unique").on(
+      table.userId,
+      table.questionId,
+    ),
+  ],
+);
 
 export const questionStats = pgTable("question_stats", {
   questionId: uuid("question_id")

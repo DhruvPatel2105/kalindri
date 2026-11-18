@@ -102,10 +102,10 @@ export default async function TestResultsPage({
       <header className="border-b border-[#e6e2d9] bg-white px-6 py-3">
         <div className="mx-auto flex max-w-3xl items-center gap-3">
           <Link
-            href={`/practice/${type}`}
+            href={`/practice/${type}/tests`}
             className="text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]"
           >
-            ← All sets
+            ← All tests
           </Link>
           <span className="text-[#ddd9d0]">|</span>
           <span className="text-sm font-semibold text-[#1e2a2a]">{label}</span>
@@ -120,7 +120,7 @@ export default async function TestResultsPage({
               href="/practice/history"
               className="text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]"
             >
-              Practice history
+              Test history
             </Link>
           </div>
         </div>
@@ -315,7 +315,7 @@ export default async function TestResultsPage({
             Retake this set
           </Link>
           <Link
-            href={`/practice/${type}`}
+            href={`/practice/${type}/tests`}
             className="rounded border border-[#dcd8cf] bg-white px-5 py-2.5 text-sm font-semibold text-[#1e2a2a] hover:border-[#1f6f6b] hover:text-[#1f6f6b]"
           >
             Choose another set

@@ -12,13 +12,15 @@ import { and, asc, count, eq, inArray, isNull, sql } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 import type * as schema from "@/lib/db/schema";
-import { questionSets, sessions } from "@/lib/db/schema";
+import { questions, questionSets, sessions } from "@/lib/db/schema";
 import type { QuestionType } from "@/lib/questions/types";
 
 import {
+  countDifficulties,
   PAGE_SIZE,
   paginate,
   type Difficulty,
+  type DifficultyMix,
   type Pagination,
 } from "./questionList";
 
@@ -27,8 +29,10 @@ type Database = PostgresJsDatabase<typeof schema>;
 export interface QuestionSetSummary {
   id: string;
   title: string;
-  /** null = not rated yet. */
+  /** The set's own rating; null = none (see difficultyMix and describeSetDifficulty). */
   difficulty: Difficulty | null;
+  /** How the set's questions are rated — only counts, never question content. */
+  difficultyMix: DifficultyMix;
   questionCount: number;
   /** The student has an unfinished attempt at this set (the button says Continue). */
   inProgress: boolean;
@@ -70,6 +74,7 @@ export async function getQuestionSetPage(
       id: questionSets.id,
       title: questionSets.title,
       difficulty: questionSets.difficulty,
+      questionIds: questionSets.questionIds,
       questionCount: sql<number>`coalesce(cardinality(${questionSets.questionIds}), 0)`,
     })
     .from(questionSets)
@@ -78,6 +83,18 @@ export async function getQuestionSetPage(
     .orderBy(asc(questionSets.createdAt), asc(questionSets.id))
     .limit(PAGE_SIZE)
     .offset(pagination.offset);
+
+  // The difficulty rating of each of this page's questions (the rating only —
+  // never the payload), to describe each set as easy / medium / hard / mixed.
+  const ratingById = new Map<string, Difficulty | null>();
+  const allIds = [...new Set(rows.flatMap((row) => row.questionIds))];
+  if (allIds.length > 0) {
+    const ratings = await db
+      .select({ id: questions.id, difficulty: questions.difficulty })
+      .from(questions)
+      .where(inArray(questions.id, allIds));
+    for (const r of ratings) ratingById.set(r.id, r.difficulty);
+  }
 
   // Which of THIS page's sets the student has half-finished.
   const openSetIds = new Set<string>();
@@ -88,6 +105,8 @@ export async function getQuestionSetPage(
       .where(
         and(
           eq(sessions.userId, params.userId),
+          // Tests only: a Practice (learn) session is never "Continue" on a test.
+          eq(sessions.mode, "practice"),
           eq(sessions.status, "in_progress"),
           // Only whole-set attempts; a retry in progress isn't "Continue" on the set.
           isNull(sessions.retryOfSessionId),
@@ -107,6 +126,7 @@ export async function getQuestionSetPage(
       id: row.id,
       title: row.title,
       difficulty: row.difficulty,
+      difficultyMix: countDifficulties(row.questionIds.map((id) => ratingById.get(id) ?? null)),
       questionCount: Number(row.questionCount),
       inProgress: openSetIds.has(row.id),
     })),

@@ -98,6 +98,7 @@ function parseBlock(block: RawBlock): ParsedQuestion<FibReadingPayload> {
     ok: true,
     number: block.number,
     title: block.title,
+    difficulty: block.difficulty,
     payload: parsed.data,
   };
 }

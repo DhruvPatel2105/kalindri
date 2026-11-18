@@ -1,11 +1,15 @@
 import Link from "next/link";
 
-import { logout } from "@/lib/auth/actions";
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { getDb } from "@/lib/db";
 import { getLibraryCounts } from "@/lib/practice/libraryCounts";
 import type { QuestionType } from "@/lib/questions/types";
 
+import { loadWeights } from "@/lib/scoring/loadWeights";
+import { weightSummary, SCORE_WEIGHT_DISCLOSURE } from "@/lib/scoring/derivedWeights";
+
+import { AppNav } from "./_components/AppNav";
+import { WeightsTable } from "./_components/WeightsTable";
 import { ProgressOverview } from "./ProgressOverview";
 
 // ─── question type cards shown on the Reading section ────────────────────────
@@ -15,7 +19,6 @@ const READING_TYPES = [
     type: "REORDER_PARAGRAPH",
     label: "Reorder Paragraph",
     part: "Part 2 — Reading",
-    weight: "9.4% of Reading",
     description:
       "Five jumbled sentences. Drag them into the correct logical order. Scored on adjacent pairs — one sentence out of place costs less than a fully reversed sequence.",
     scoring: "Adjacent pairs",
@@ -26,7 +29,6 @@ const READING_TYPES = [
     type: "FIB_RW",
     label: "R&W Fill in the Blanks",
     part: "Part 1 — Speaking & Writing",
-    weight: "19.5% of Writing · 25.8% of Reading",
     description:
       "A passage with dropdown menus at each gap. Pick the word that fits both the grammar and the meaning of the sentence. One mark per blank, no penalties.",
     scoring: "1 pt per blank",
@@ -37,7 +39,6 @@ const READING_TYPES = [
     type: "FIB_READING",
     label: "Reading Fill in the Blanks",
     part: "Part 2 — Reading",
-    weight: "21.1% of Reading",
     description:
       "A passage with gaps and a word bank below. Drag each word into the right gap. The bank has more words than gaps — choose carefully. One mark per correct placement.",
     scoring: "1 pt per blank",
@@ -75,7 +76,6 @@ type TypeCard = {
   type: QuestionType;
   label: string;
   part: string;
-  weight?: string;
   description: string;
   scoring: string;
   icon: string;
@@ -97,6 +97,7 @@ export default async function HomePage() {
   const appUser = await requireActiveSession();
 
   const counts = await getLibraryCounts(getDb(), appUser.orgId);
+  const { rows: weightRows, methodNote } = await loadWeights(appUser.orgId);
   const cards: TypeCard[] = [
     ...READING_TYPES,
     ...MULTIPLE_CHOICE_TYPES.filter((qt) => (counts.get(qt.type)?.sets ?? 0) > 0),
@@ -115,29 +116,7 @@ export default async function HomePage() {
   return (
     <div className="min-h-screen bg-[#f4f2ee] pb-16 text-[#1e2a2a]">
 
-      {/* ── top nav ── */}
-      <header className="flex items-center justify-between gap-6 px-8 py-5 md:px-12">
-        <span className="text-2xl font-semibold tracking-tight text-[#17544f]">
-          Kalindri
-        </span>
-        <div className="flex items-center gap-4">
-          <Link
-            href="/practice/history"
-            className="text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]"
-          >
-            Practice history
-          </Link>
-          <span className="text-sm text-[#7d8a88]">{appUser.email}</span>
-          <form action={logout}>
-            <button
-              type="submit"
-              className="rounded border border-[#dcd8cf] bg-white px-4 py-2 text-sm font-medium text-[#1e2a2a] hover:border-[#1f6f6b] hover:text-[#1f6f6b]"
-            >
-              Log out
-            </button>
-          </form>
-        </div>
-      </header>
+      <AppNav />
 
       <div className="mx-auto max-w-5xl px-6 md:px-12">
 
@@ -249,10 +228,10 @@ export default async function HomePage() {
                   </p>
 
                   <div className="flex flex-wrap gap-4 pt-0.5">
-                    {qt.weight ? (
+                    {weightSummary(weightRows, qt.type) ? (
                       <span className="text-xs text-[#7d8a88]">
                         <span className="font-semibold text-[#5c6a68]">Weight</span>{" "}
-                        {qt.weight}
+                        {weightSummary(weightRows, qt.type)}
                       </span>
                     ) : null}
                     <span className="text-xs text-[#7d8a88]">
@@ -290,6 +269,10 @@ export default async function HomePage() {
           ))}
         </div>
 
+        <div className="mt-10">
+          <WeightsTable rows={weightRows} methodNote={methodNote} />
+        </div>
+
         {/* ── how scoring works ── */}
         <div className="mt-8 rounded border border-[#e6e2d9] bg-[#fafaf8] px-6 py-5">
           <h3 className="mb-3 text-xs font-semibold uppercase tracking-widest text-[#5c6a68]">
@@ -324,10 +307,7 @@ export default async function HomePage() {
 
         {/* ── disclaimer ── */}
         <p className="mt-6 text-xs leading-relaxed text-[#9aa39f]">
-          Estimated using Pearson&apos;s published question counts and scoring
-          rubrics. Pearson does not publish task weightings. This is our
-          derivation, not an official figure. Kalindri is not affiliated with or
-          endorsed by Pearson.
+          {SCORE_WEIGHT_DISCLOSURE} Kalindri is not affiliated with or endorsed by Pearson.
         </p>
       </div>
     </div>

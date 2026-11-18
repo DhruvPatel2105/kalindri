@@ -125,6 +125,15 @@ incorrect / unanswered counts) once every answer is marked; `attempts` and `scor
 source of truth. Every test, retake and retry is its own `sessions` row and nothing updates a
 finished session's attempts, so practice history is just these rows read back, newest first.
 
+**Practice (learn) mode vs Test.** A question type offers two separate ways to work through a set:
+*Test* (sit the whole set, submit, get a score — `sessions.mode = 'practice'`, everything above) and
+*Practice* (all questions on one page, press Answer to reveal one question's answer, Try Again to
+re-attempt — `sessions.mode = 'drill'`, one open session per student per set, no `session_type`). Practice
+attempts are ordinary `attempts` rows (frozen question, version, scoring rules, `is_correct`), one per Answer
+press and never overwritten, but with `counts_toward_stats = false` and `is_scored_for_analytics = false`.
+Test history, dashboards, mastery and "Continue" all filter on test sessions, so Practice never appears in
+them; a Practice-specific dashboard can be built later from the `drill` sessions.
+
 **Retry journey identifiers.** Every practice session carries the three ids that describe where
 it sits in a retry journey, plus its type and status:
 

@@ -96,6 +96,7 @@ function parseBlock(
     ok: true,
     number: block.number,
     title: block.title,
+    difficulty: block.difficulty,
     payload: parsed.data,
   };
 }
