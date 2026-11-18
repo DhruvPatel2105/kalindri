@@ -61,13 +61,17 @@ const EXPECTED_COLUMNS: Record<string, string[]> = {
     "is_active", "source", "source_notes", "is_seed_data", "created_at",
     "updated_at",
   ],
+  question_sets: [
+    "id", "org_id", "type", "title", "difficulty", "question_ids", "status",
+    "is_active", "is_seed_data", "created_at", "updated_at",
+  ],
   question_stats: [
     "question_id", "org_id", "attempt_count", "avg_score_pct", "flag_count",
     "last_attempted_at",
   ],
   sessions: [
     "id", "org_id", "user_id", "mode", "blueprint_id", "mock_id",
-    "question_ids", "current_item_index", "state", "is_timed",
+    "question_set_id", "retry_of_session_id", "question_ids", "current_item_index", "state", "result_summary", "is_timed",
     "is_scored_for_analytics", "status", "started_at", "completed_at",
   ],
   attempts: [
@@ -151,8 +155,8 @@ describe("table presence", () => {
     expect([...tablesByName.keys()].sort()).toEqual(EXPECTED_TABLE_NAMES);
   });
 
-  it("defines all 23 tables", () => {
-    expect(tablesByName.size).toBe(23);
+  it("defines all 24 tables", () => {
+    expect(tablesByName.size).toBe(24);
   });
 });
 

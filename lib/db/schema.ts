@@ -15,6 +15,7 @@
  */
 
 import {
+  type AnyPgColumn,
   boolean,
   date,
   integer,
@@ -25,6 +26,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -271,6 +273,33 @@ export const questions = pgTable("questions", {
     .defaultNow(),
 });
 
+/**
+ * An ordered group of questions of ONE type that a student sits as a single
+ * test (practice test engine). Questions stay in the one `questions` table
+ * (CLAUDE.md #1); a set only references them, in order, by id.
+ *
+ * `question_ids` is an array rather than a join table to match
+ * `sessions.question_ids` / `mocks.question_ids`. Nothing in the database
+ * enforces that every id exists or is the right type, so the set-building
+ * script (lib/db/createQuestionSets.ts) validates that when it writes one,
+ * and the engine re-checks each question is published and active at start.
+ */
+export const questionSets = pgTable("question_sets", {
+  id: pkId(),
+  orgId: orgId(),
+  type: questionType("type").notNull(),
+  title: text("title").notNull(),
+  difficulty: questionDifficulty("difficulty"),
+  questionIds: uuid("question_ids").array().notNull(),
+  status: questionStatus("status").notNull().default("draft"),
+  isActive: boolean("is_active").notNull().default(true),
+  isSeedData: boolean("is_seed_data").notNull().default(false),
+  createdAt: createdAt(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
+
 export const questionStats = pgTable("question_stats", {
   questionId: uuid("question_id")
     .primaryKey()
@@ -335,9 +364,26 @@ export const sessions = pgTable("sessions", {
   mode: sessionMode("mode").notNull(),
   blueprintId: uuid("blueprint_id").references(() => mockBlueprints.id),
   mockId: uuid("mock_id").references(() => mocks.id),
+  /** The question set being sat, for practice-test sessions (null otherwise). */
+  questionSetId: uuid("question_set_id").references(() => questionSets.id),
+  /**
+   * Set on a "practise the questions I got wrong" session: the finished
+   * session whose not-fully-correct questions this one repeats. Retries chain
+   * (retry of a retry); a session has at most one retry (unique index).
+   */
+  retryOfSessionId: uuid("retry_of_session_id").references(
+    (): AnyPgColumn => sessions.id,
+  ),
   questionIds: uuid("question_ids").array(),
   currentItemIndex: integer("current_item_index").notNull().default(0),
   state: jsonb("state"),
+  /**
+   * A finished practice test's result roll-up (see lib/practice/testResults.ts
+   * TestSummary): written once every answer has been marked, so history and
+   * future analytics can read it without re-scoring. The attempts and scores
+   * rows remain the source of truth; this is a stored copy of the sum.
+   */
+  resultSummary: jsonb("result_summary"),
   isTimed: boolean("is_timed").notNull().default(true),
   isScoredForAnalytics: boolean("is_scored_for_analytics")
     .notNull()
@@ -347,7 +393,9 @@ export const sessions = pgTable("sessions", {
     .notNull()
     .defaultNow(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
-});
+}, (table) => [
+  uniqueIndex("sessions_retry_of_session_id_unique").on(table.retryOfSessionId),
+]);
 
 export const attempts = pgTable("attempts", {
   id: pkId(),

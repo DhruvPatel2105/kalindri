@@ -72,6 +72,12 @@ export default async function HomePage() {
           Kalindri
         </span>
         <div className="flex items-center gap-4">
+          <Link
+            href="/practice/history"
+            className="text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]"
+          >
+            Practice history
+          </Link>
           <span className="text-sm text-[#7d8a88]">{appUser.email}</span>
           <form action={logout}>
             <button

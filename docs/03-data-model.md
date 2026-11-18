@@ -96,6 +96,35 @@ question_stats (
 `is_active = false` removes a question from all pools instantly, including assembled mocks.
 Past attempts remain valid because of snapshotting.
 
+### Question sets (practice test engine)
+
+```sql
+question_sets (
+  id, org_id,
+  type,                                       -- one question type per set
+  title, difficulty,                          -- difficulty nullable = unrated
+  question_ids UUID[],                        -- ordered; questions stay in `questions`
+  status,                                     -- 'draft' | 'review' | 'published'
+  is_active, is_seed_data,
+  created_at, updated_at
+)
+```
+
+A set is what the browse page lists and what a student sits as one test. A practice-test
+`sessions` row carries `question_set_id`, copies the set's ids into `question_ids`, and keeps
+`state = { snapshots, answers }`: every question's payload as it was when the test started
+(grading never re-reads `questions`) and the draft answers autosaved as the student moves
+between questions. Questions the student never answered get no `attempts` row.
+
+**Retries and history.** `sessions.retry_of_session_id` points a "practise incorrect
+questions" session at the finished session whose not-fully-correct questions it repeats
+(unique: one retry per session, so retries form a chain). Retry sessions have
+`is_scored_for_analytics = false` and their attempts `counts_toward_stats = false`.
+`sessions.result_summary` (JSONB) stores a finished test's roll-up (marks, correct / partial /
+incorrect / unanswered counts) once every answer is marked; `attempts` and `scores` stay the
+source of truth. Every test, retake and retry is its own `sessions` row and nothing updates a
+finished session's attempts, so practice history is just these rows read back, newest first.
+
 ### Sessions, attempts, scores
 
 ```sql

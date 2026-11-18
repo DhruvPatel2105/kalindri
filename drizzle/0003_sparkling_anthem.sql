@@ -1,0 +1,3 @@
+ALTER TABLE "sessions" ADD COLUMN "retry_of_session_id" uuid;--> statement-breakpoint
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_retry_of_session_id_sessions_id_fk" FOREIGN KEY ("retry_of_session_id") REFERENCES "public"."sessions"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+CREATE UNIQUE INDEX "sessions_retry_of_session_id_unique" ON "sessions" USING btree ("retry_of_session_id");

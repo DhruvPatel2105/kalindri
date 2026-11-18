@@ -15,6 +15,27 @@
       "when": 1789637110320,
       "tag": "0001_wandering_shape",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1795007330959,
+      "tag": "0002_odd_miss_america",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795008632522,
+      "tag": "0003_sparkling_anthem",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795009021623,
+      "tag": "0004_mushy_speed",
+      "breakpoints": true
     }
   ]
 }
