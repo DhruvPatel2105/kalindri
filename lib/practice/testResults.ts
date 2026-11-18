@@ -34,12 +34,46 @@ export interface TestSummary {
   /** Whole-number percentage of available marks, or null when no marks are available. */
   percent: number | null;
   /**
-   * Of the answered questions that have been marked, the percentage that got
-   * FULL marks — "how often I was right when I answered". Differs from
-   * `percent`, which counts partial marks and unanswered questions. Null if
-   * nothing marked was answered.
+   * Accuracy = correct answers ÷ ALL questions in the session × 100, where
+   * "correct" means full marks. Unanswered questions are in the total and
+   * count as not correct (so do partly correct ones). Null if the session has
+   * no questions, or while an answer is still awaiting its mark — accuracy
+   * would be understated until then. Differs from `percent`, which gives
+   * partial credit.
    */
   accuracyPercent: number | null;
+  /**
+   * Completion rate = attempted questions ÷ total questions × 100: how much
+   * of the test was answered, whether or not it was right. Null if the
+   * session has no questions.
+   */
+  completionPercent: number | null;
+}
+
+/**
+ * The ONE place a percentage is calculated: numerator ÷ denominator × 100,
+ * rounded to a whole number, null (never NaN or Infinity) when the
+ * denominator isn't positive — so an empty session can't divide by zero and
+ * every dashboard rounds the same way. Aggregates must pass SUMS of counts
+ * (weighted), never an average of percentages.
+ */
+export function percentOf(numerator: number, denominator: number): number | null {
+  if (!(denominator > 0) || !Number.isFinite(numerator)) return null;
+  return Math.round((numerator / denominator) * 100);
+}
+
+/**
+ * Accuracy: correct answers ÷ total questions × 100. `total` must be every
+ * question in the session (or sessions), so unanswered questions count
+ * against it. Null when there are no questions.
+ */
+export function accuracyPercent(correct: number, total: number): number | null {
+  return percentOf(correct, total);
+}
+
+/** Completion rate: attempted questions ÷ total questions × 100. Null when there are no questions. */
+export function completionPercent(attempted: number, total: number): number | null {
+  return percentOf(attempted, total);
 }
 
 export function summarizeTest(outcomes: readonly QuestionOutcome[]): TestSummary {
@@ -63,8 +97,6 @@ export function summarizeTest(outcomes: readonly QuestionOutcome[]): TestSummary
     maxScore += outcome.maxScore ?? 0;
   }
 
-  const markedAnswered = kinds.correct + kinds.partial + kinds.incorrect;
-
   return {
     totalQuestions: outcomes.length,
     answered,
@@ -73,8 +105,9 @@ export function summarizeTest(outcomes: readonly QuestionOutcome[]): TestSummary
     ...kinds,
     score,
     maxScore,
-    percent: maxScore > 0 ? Math.round((score / maxScore) * 100) : null,
-    accuracyPercent: markedAnswered > 0 ? Math.round((kinds.correct / markedAnswered) * 100) : null,
+    percent: percentOf(score, maxScore),
+    accuracyPercent: unscored > 0 ? null : accuracyPercent(kinds.correct, outcomes.length),
+    completionPercent: completionPercent(answered, outcomes.length),
   };
 }
 
@@ -128,7 +161,9 @@ const storedSummarySchema = z.object({
   score: z.number().nonnegative(),
   maxScore: z.number().nonnegative(),
   percent: z.number().nullable(),
-  accuracyPercent: z.number().nullable(),
+  // Not trusted: accuracy is recomputed from the counts on read (see parseStoredSummary).
+  accuracyPercent: z.number().nullable().optional(),
+  completionPercent: z.number().nullable().optional(),
 });
 
 /**
@@ -138,5 +173,14 @@ const storedSummarySchema = z.object({
  */
 export function parseStoredSummary(value: unknown): TestSummary | null {
   const parsed = storedSummarySchema.safeParse(value);
-  return parsed.success ? parsed.data : null;
+  if (!parsed.success) return null;
+  const data = parsed.data;
+  return {
+    ...data,
+    // Recomputed so a summary stored under an older definition of accuracy
+    // can never show a stale figure.
+    accuracyPercent:
+      data.unscored > 0 ? null : accuracyPercent(data.correct, data.totalQuestions),
+    completionPercent: completionPercent(data.answered, data.totalQuestions),
+  };
 }

@@ -2,6 +2,11 @@ import Link from "next/link";
 
 import { logout } from "@/lib/auth/actions";
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
+import { getDb } from "@/lib/db";
+import { getLibraryCounts } from "@/lib/practice/libraryCounts";
+import type { QuestionType } from "@/lib/questions/types";
+
+import { ProgressOverview } from "./ProgressOverview";
 
 // ─── question type cards shown on the Reading section ────────────────────────
 
@@ -13,7 +18,6 @@ const READING_TYPES = [
     weight: "9.4% of Reading",
     description:
       "Five jumbled sentences. Drag them into the correct logical order. Scored on adjacent pairs — one sentence out of place costs less than a fully reversed sequence.",
-    count: 18,
     scoring: "Adjacent pairs",
     icon: "⇅",
     accent: "#1f6f6b",
@@ -25,7 +29,6 @@ const READING_TYPES = [
     weight: "19.5% of Writing · 25.8% of Reading",
     description:
       "A passage with dropdown menus at each gap. Pick the word that fits both the grammar and the meaning of the sentence. One mark per blank, no penalties.",
-    count: 15,
     scoring: "1 pt per blank",
     icon: "▾",
     accent: "#2d6fa3",
@@ -37,17 +40,52 @@ const READING_TYPES = [
     weight: "21.1% of Reading",
     description:
       "A passage with gaps and a word bank below. Drag each word into the right gap. The bank has more words than gaps — choose carefully. One mark per correct placement.",
-    count: 63,
     scoring: "1 pt per blank",
     icon: "⤵",
     accent: "#5a4fcf",
   },
 ] as const;
 
+// Multiple-choice Reading types: shown only once they have a published set, and
+// with no weight line — docs/02-scoring-spec.md §10 has no derived weight for them.
+const MULTIPLE_CHOICE_TYPES = [
+  {
+    type: "MCS_READING",
+    label: "Multiple Choice (Single)",
+    part: "Part 2 — Reading",
+    description:
+      "Read a passage and choose the one best answer to the question. Marked right or wrong.",
+    scoring: "1 pt per question",
+    icon: "◉",
+    accent: "#a3622d",
+  },
+  {
+    type: "MCM_READING",
+    label: "Multiple Choice (Multiple)",
+    part: "Part 2 — Reading",
+    description:
+      "Read a passage and select every correct answer. Each correct choice earns a mark and each wrong one loses a mark, never going below zero.",
+    scoring: "+1 correct, −1 incorrect",
+    icon: "☑",
+    accent: "#8a4f8f",
+  },
+] as const;
+
+type TypeCard = {
+  type: QuestionType;
+  label: string;
+  part: string;
+  weight?: string;
+  description: string;
+  scoring: string;
+  icon: string;
+  accent: string;
+};
+
 // ─── skill context strip ──────────────────────────────────────────────────────
 
 const SKILL_NOTES = [
-  { skill: "Reading", note: "Three types available to practice now." },
+  { skill: "Reading", note: "" }, // note filled in from the live card count
   { skill: "Writing", note: "Coming soon." },
   { skill: "Speaking", note: "Coming soon." },
   { skill: "Listening", note: "Coming soon." },
@@ -57,6 +95,17 @@ const SKILL_NOTES = [
 
 export default async function HomePage() {
   const appUser = await requireActiveSession();
+
+  const counts = await getLibraryCounts(getDb(), appUser.orgId);
+  const cards: TypeCard[] = [
+    ...READING_TYPES,
+    ...MULTIPLE_CHOICE_TYPES.filter((qt) => (counts.get(qt.type)?.sets ?? 0) > 0),
+  ];
+  const totalQuestions = cards.reduce(
+    (sum, qt) => sum + (counts.get(qt.type)?.questions ?? 0),
+    0,
+  );
+  const typeWord = cards.length === 1 ? "type" : "types";
 
   const firstName = appUser.email.split("@")[0] ?? "there";
   const hour = new Date().getHours();
@@ -106,10 +155,14 @@ export default async function HomePage() {
         <div className="mb-8 rounded border border-[#bcd6d3] bg-[#eaf2f1] px-5 py-4">
           <p className="text-sm leading-relaxed text-[#17544f]">
             <span className="font-semibold">Reading is live.</span>{" "}
-            All three Reading question types are available below — 96 questions
-            in total. Speaking, Writing and Listening are coming next.
+            {cards.length} Reading question {typeWord} {cards.length === 1 ? "is" : "are"} available below —{" "}
+            {totalQuestions} questions in total. Speaking, Writing and Listening
+            are coming next.
           </p>
         </div>
+
+        {/* ── your progress (saved practice sessions) ── */}
+        <ProgressOverview user={appUser} />
 
         {/* ── skill status strip ── */}
         <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -147,7 +200,9 @@ export default async function HomePage() {
                     isLive ? "text-[#5c6a68]" : "text-[#adb4b1]"
                   }`}
                 >
-                  {note}
+                  {skill === "Reading"
+                    ? `${cards.length} ${typeWord} available to practise now.`
+                    : note}
                 </p>
               </div>
             );
@@ -159,12 +214,12 @@ export default async function HomePage() {
           <h2 className="text-lg font-semibold text-[#1e2a2a]">
             Reading — practice by type
           </h2>
-          <span className="text-sm text-[#7d8a88]">96 questions · ranked by weight</span>
+          <span className="text-sm text-[#7d8a88]">{totalQuestions} questions</span>
         </div>
 
         {/* ── question type cards ── */}
         <div className="flex flex-col gap-4">
-          {READING_TYPES.map((qt) => (
+          {cards.map((qt) => (
             <div
               key={qt.type}
               className="overflow-hidden rounded border border-[#ddd9d0] bg-white"
@@ -194,17 +249,22 @@ export default async function HomePage() {
                   </p>
 
                   <div className="flex flex-wrap gap-4 pt-0.5">
-                    <span className="text-xs text-[#7d8a88]">
-                      <span className="font-semibold text-[#5c6a68]">Weight</span>{" "}
-                      {qt.weight}
-                    </span>
+                    {qt.weight ? (
+                      <span className="text-xs text-[#7d8a88]">
+                        <span className="font-semibold text-[#5c6a68]">Weight</span>{" "}
+                        {qt.weight}
+                      </span>
+                    ) : null}
                     <span className="text-xs text-[#7d8a88]">
                       <span className="font-semibold text-[#5c6a68]">Scoring</span>{" "}
                       {qt.scoring}
                     </span>
                     <span className="text-xs text-[#7d8a88]">
                       <span className="font-semibold text-[#5c6a68]">Bank</span>{" "}
-                      {qt.count} questions
+                      {counts.get(qt.type)?.questions ?? 0} questions ·{" "}
+                      {(counts.get(qt.type)?.sets ?? 0) === 0
+                        ? "no sets yet"
+                        : `${counts.get(qt.type)?.sets} ${counts.get(qt.type)?.sets === 1 ? "set" : "sets"}`}
                     </span>
                   </div>
                 </div>
@@ -217,6 +277,12 @@ export default async function HomePage() {
                     style={{ background: qt.accent }}
                   >
                     Practice →
+                  </Link>
+                  <Link
+                    href={`/practice/${qt.type}/progress`}
+                    className="ml-3 text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]"
+                  >
+                    Progress
                   </Link>
                 </div>
               </div>
@@ -233,11 +299,11 @@ export default async function HomePage() {
             {[
               {
                 title: "Instant & deterministic",
-                body: "All three Reading types are scored automatically the moment you submit — no AI, no waiting.",
+                body: "Reading types are scored automatically the moment you submit a test — no AI, no waiting.",
               },
               {
-                title: "Per-blank feedback",
-                body: "After each attempt you see which blanks were right, which were wrong, and what the correct answer was.",
+                title: "Review after you submit",
+                body: "Sit the whole set, then go through each question: your answer beside the correct one, green for right and red for wrong. Questions you left blank are flagged too.",
               },
               {
                 title: "Adjacent-pair scoring for Reorder",
@@ -258,9 +324,10 @@ export default async function HomePage() {
 
         {/* ── disclaimer ── */}
         <p className="mt-6 text-xs leading-relaxed text-[#9aa39f]">
-          Weights are our derivation from Pearson&apos;s published question counts
-          and rubric maximums — not official Pearson figures. Kalindri is not
-          affiliated with or endorsed by Pearson.
+          Estimated using Pearson&apos;s published question counts and scoring
+          rubrics. Pearson does not publish task weightings. This is our
+          derivation, not an official figure. Kalindri is not affiliated with or
+          endorsed by Pearson.
         </p>
       </div>
     </div>

@@ -34,6 +34,8 @@ import "server-only";
  * the user. The student-callable mutations live in testActions.ts.
  */
 
+import { randomUUID } from "node:crypto";
+
 import { and, asc, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
@@ -53,6 +55,7 @@ import {
 } from "@/lib/scoring/registry";
 
 import { retryLabel } from "./retry";
+import { scoringRulesFor } from "./scoringRules";
 import { validateDeterministicResponse } from "./responseSchemas";
 import { buildQuestionReview, type QuestionReview } from "./reviewModel";
 import {
@@ -175,7 +178,12 @@ export async function startOrResumeTest(
   // Fresh start. Only questions that are still published and active in this
   // org are included; the set's own order is kept.
   const rows = await db
-    .select({ id: questions.id, type: questions.type, payload: questions.payload })
+    .select({
+      id: questions.id,
+      type: questions.type,
+      payload: questions.payload,
+      version: questions.version,
+    })
     .from(questions)
     .where(
       and(
@@ -191,7 +199,9 @@ export async function startOrResumeTest(
   const snapshots: QuestionSnapshot[] = [];
   for (const id of set.questionIds) {
     const row = byId.get(id);
-    if (row) snapshots.push({ id: row.id, type: row.type, payload: row.payload });
+    if (row) {
+      snapshots.push({ id: row.id, type: row.type, payload: row.payload, version: row.version });
+    }
   }
 
   if (snapshots.length === 0) {
@@ -200,13 +210,19 @@ export async function startOrResumeTest(
     );
   }
 
+  // A full practice is the root of its own retry journey, so the id is chosen
+  // here to be written into root_session_id in the same insert.
+  const sessionId = randomUUID();
   const [session] = await db
     .insert(sessions)
     .values({
+      id: sessionId,
       orgId: user.orgId,
       userId: user.id,
       mode: "practice",
       questionSetId: set.id,
+      sessionType: "FULL_PRACTICE",
+      rootSessionId: sessionId,
       questionIds: snapshots.map((s) => s.id),
       currentItemIndex: 0,
       state: buildTestState(snapshots),
@@ -328,28 +344,35 @@ export async function finishTest(
     if (!state) throw new TestSessionError("Test is missing its questions.");
 
     const now = new Date();
-    const answered = state.snapshots.filter((s) =>
-      isAnswered(state.answers[s.id]),
-    );
-
-    // Questions left blank get no attempt row; the session's question_ids
-    // and state.answers already record that they were skipped.
-    if (answered.length > 0) {
+    // EVERY question in the test gets an attempt row, each carrying the frozen
+    // question (type, version, payload with its answer key) so history never
+    // depends on the live question. Answered ones are 'submitted'; questions
+    // left blank are 'abandoned' with no response, kept out of statistics and
+    // not correct.
+    if (state.snapshots.length > 0) {
       await tx.insert(attempts).values(
-        answered.map((snapshot) => ({
-          orgId: user.orgId,
-          sessionId: session.id,
-          userId: user.id,
-          questionId: snapshot.id,
-          questionSnapshot: snapshot.payload,
-          response: state.answers[snapshot.id],
-          status: "submitted" as const,
-          // A retry repeats questions whose answers the student has just
-          // seen, so it must not count toward question or student stats.
-          countsTowardStats: session.retryOfSessionId === null,
-          startedAt: session.startedAt,
-          submittedAt: now,
-        })),
+        state.snapshots.map((snapshot) => {
+          const response = state.answers[snapshot.id];
+          const answered = isAnswered(response);
+          return {
+            orgId: user.orgId,
+            sessionId: session.id,
+            userId: user.id,
+            questionId: snapshot.id,
+            questionSnapshot: snapshot.payload,
+            questionType: snapshot.type,
+            questionVersion: snapshot.version ?? null,
+            scoringRules: scoringRulesFor(snapshot.type),
+            response: answered ? response : null,
+            status: answered ? ("submitted" as const) : ("abandoned" as const),
+            isCorrect: answered ? null : false, // answered ones are set when scored
+            // A retry repeats questions whose answers the student has just
+            // seen, so it must not count toward question or student stats.
+            countsTowardStats: answered && session.retryOfSessionId === null,
+            startedAt: session.startedAt,
+            submittedAt: now,
+          };
+        }),
       );
     }
 
@@ -400,7 +423,14 @@ export async function scoreUnscoredAttempts(sessionId: string): Promise<void> {
     })
     .from(attempts)
     .leftJoin(scores, eq(scores.attemptId, attempts.id))
-    .where(and(eq(attempts.sessionId, sessionId), isNull(scores.id)))
+    .where(
+      and(
+        eq(attempts.sessionId, sessionId),
+        // Blank questions ('abandoned') have nothing to score.
+        eq(attempts.status, "submitted"),
+        isNull(scores.id),
+      ),
+    )
     .orderBy(asc(attempts.submittedAt));
 
   for (const attempt of pending) {
@@ -429,6 +459,10 @@ export async function scoreUnscoredAttempts(sessionId: string): Promise<void> {
         rawOutput: result,
         status: "success",
       });
+      await db
+        .update(attempts)
+        .set({ isCorrect: result.score >= result.maxScore && result.maxScore > 0 })
+        .where(eq(attempts.id, attempt.id));
     } catch (err) {
       // Keep going: one bad question must not stop the rest being scored.
       await db.insert(scoreRuns).values({
@@ -494,6 +528,7 @@ export async function getTestResults(
   const rows = await db
     .select({
       questionId: attempts.questionId,
+      status: attempts.status,
       score: scores.score,
       maxScore: scores.maxScore,
     })
@@ -505,7 +540,8 @@ export async function getTestResults(
   const questionsOut: TestResultQuestion[] = state.snapshots.map(
     (snapshot, index) => {
       const row = byQuestion.get(snapshot.id);
-      const answered = Boolean(row);
+      // Blank questions have an attempt row too ('abandoned'); only submitted ones were answered.
+      const answered = row?.status === "submitted";
 
       let maxScore: number | null = row?.maxScore != null ? Number(row.maxScore) : null;
       if (maxScore === null && isDeterministicType(snapshot.type)) {
@@ -597,7 +633,7 @@ export async function getReviewQuestion(
   // The response that was actually graded: the attempt row. Unanswered
   // questions have none.
   const [attempt] = await db
-    .select({ response: attempts.response })
+    .select({ response: attempts.response, questionSnapshot: attempts.questionSnapshot })
     .from(attempts)
     .where(
       and(eq(attempts.sessionId, session.id), eq(attempts.questionId, snapshot.id)),
@@ -607,7 +643,13 @@ export async function getReviewQuestion(
   return {
     index,
     total: state.snapshots.length,
-    review: buildQuestionReview(snapshot, attempt?.response),
+    // The attempt's own frozen copy of the question is the record of what the
+    // student saw; the session snapshot is the fallback for tests saved
+    // before every question got an attempt row.
+    review: buildQuestionReview(
+      { ...snapshot, payload: attempt?.questionSnapshot ?? snapshot.payload },
+      attempt?.response,
+    ),
   };
 }
 
@@ -631,10 +673,28 @@ async function findOwnedSession(
   return row;
 }
 
-/** The whole chain this session belongs to, oldest (the original test) first. */
+/**
+ * The whole retry journey this session belongs to, oldest (the original test)
+ * first. Reads it with one query on root_session_id; sessions saved before
+ * that column existed (and not backfilled) fall back to following the parent
+ * links.
+ */
 async function loadChain(user: SessionUser, sessionId: string): Promise<SessionRow[]> {
   const start = await findOwnedSession(user, sessionId);
   if (!start) throw new TestSessionError("Test not found.");
+
+  if (start.rootSessionId) {
+    const journey = await getDb()
+      .select()
+      .from(sessions)
+      .where(
+        and(eq(sessions.rootSessionId, start.rootSessionId), eq(sessions.userId, user.id)),
+      )
+      // Each retry starts after its parent finished, so start time is journey order.
+      .orderBy(asc(sessions.startedAt), asc(sessions.id))
+      .limit(MAX_CHAIN);
+    if (journey.some((row) => row.id === start.id)) return journey;
+  }
 
   const chain: SessionRow[] = [start];
   while (chain.length < MAX_CHAIN) {
@@ -708,7 +768,12 @@ export async function startRetry(
   if (!parent) throw new TestSessionError("Test not found.");
 
   const rows = await db
-    .select({ id: questions.id, type: questions.type, payload: questions.payload })
+    .select({
+      id: questions.id,
+      type: questions.type,
+      payload: questions.payload,
+      version: questions.version,
+    })
     .from(questions)
     .where(
       and(
@@ -722,7 +787,9 @@ export async function startRetry(
   const snapshots: QuestionSnapshot[] = [];
   for (const id of mistakeIds) {
     const row = byId.get(id);
-    if (row) snapshots.push({ id: row.id, type: row.type, payload: row.payload });
+    if (row) {
+      snapshots.push({ id: row.id, type: row.type, payload: row.payload, version: row.version });
+    }
   }
   if (snapshots.length === 0) {
     throw new QuestionNotAvailableError("Those questions are no longer available.");
@@ -736,6 +803,9 @@ export async function startRetry(
       mode: "practice",
       questionSetId: parent.questionSetId,
       retryOfSessionId: parent.id,
+      sessionType: "INCORRECT_PRACTICE",
+      // Same journey as the parent: its root, or the parent itself if it is the root.
+      rootSessionId: parent.rootSessionId ?? parent.id,
       questionIds: snapshots.map((s) => s.id),
       currentItemIndex: 0,
       state: buildTestState(snapshots),

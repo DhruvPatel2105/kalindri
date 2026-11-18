@@ -125,6 +125,62 @@ incorrect / unanswered counts) once every answer is marked; `attempts` and `scor
 source of truth. Every test, retake and retry is its own `sessions` row and nothing updates a
 finished session's attempts, so practice history is just these rows read back, newest first.
 
+**Retry journey identifiers.** Every practice session carries the three ids that describe where
+it sits in a retry journey, plus its type and status:
+
+| Spec name | Column | Meaning |
+|---|---|---|
+| `original_question_set_id` | `question_set_id` | The set that was originally sat; every session in a journey names the same one |
+| `parent_session_id` | `retry_of_session_id` | The immediately previous session; null on a full practice |
+| `root_session_id` | `root_session_id` | The first full practice of the journey; a full practice is its own root, a retry copies its parent's root |
+| `session_type` | `session_type` | `FULL_PRACTICE` or `INCORRECT_PRACTICE` |
+| `session_status` | `status` | `in_progress`, `completed` or `abandoned` |
+
+Example: session 001 (full, parent null, root 001) → 002 (incorrect practice, parent 001, root 001)
+→ 003 (incorrect practice, parent 002, root 001). CHECK constraints keep it consistent: a session
+has a parent exactly when it is `INCORRECT_PRACTICE`, and a full practice's root is itself. A whole
+journey is read with one query on `root_session_id`.
+
+**Only `completed` sessions contribute to performance figures** (accuracy, scores, practice time,
+trends). `abandoned` sessions are kept for operational history but are excluded from performance
+and from the practice history list; `in_progress` ones appear in history only so they can be resumed.
+
+**Question snapshots — history never changes when a question is edited.** When a test starts, every
+question's payload (passage, options, and the answer key — for fill-in-the-blanks the expected answer
+of every blank) is frozen into `sessions.state.snapshots`. When the test is submitted, every question
+gets an `attempts` row carrying that frozen payload (`question_snapshot`), its `question_type` and
+`question_version`, the student's answer (`response`, null if left blank) and `is_correct`. Answered
+questions are `submitted`; questions left blank are `abandoned` (no response, `counts_toward_stats =
+false`, not correct). Review and marks read these copies, never the live question, so editing a
+question later (e.g. changing its correct answer) leaves every earlier report as it was. `questions.version`
+starts at 1 and a database trigger adds 1 whenever `payload` changes, so each attempt records which
+version it was taken against. Retrying re-reads the CURRENT question, as a new session with its own
+snapshot.
+
+**Performance calculations** (practice dashboards). Only `completed` sessions count. Every percentage
+goes through one helper (`percentOf`: rounded, `null` — never NaN — for an empty denominator) and is
+**weighted**: it is built from summed counts (total correct ÷ total questions), never by averaging
+per-session percentages.
+
+- *Accuracy* = correct answers ÷ total questions × 100, where "correct" means full marks. Unanswered
+  questions are in the total and count as not correct, as do partly correct ones.
+- *Completion rate* = attempted questions ÷ total questions × 100 (answered, right or wrong).
+- *Full-test performance* — completed `FULL_PRACTICE` sessions only: accuracy, completion rate,
+  average score (total marks ÷ total available marks), session count.
+- *Retry performance* — completed `INCORRECT_PRACTICE` sessions only, calculated separately. Retries are
+  never part of full-test accuracy, the trend or improvement.
+- *Full-test improvement* = the latest completed full test's accuracy minus the previous completed full
+  test's, in percentage points (needs two; a test still awaiting a mark is skipped).
+- *Question mastery* = of the unique questions a student has answered, the share whose LATEST completed,
+  marked answer (full test or retry) was correct. A blank answer doesn't override an earlier result.
+- *Practice time* adds full and retry sessions, each capped at 2 hours (active time isn't tracked yet).
+  *Questions practised* = attempted questions across full tests and retries.
+
+None of these is stored except the per-session roll-up in `sessions.result_summary`; accuracy and
+completion rate are recomputed from its counts on read. `attempts.scoring_rules` records the scorer, the
+rule in words and the scorer version an attempt was marked under, so a historical report can say how it was
+marked if the rules change later. Marks-based "score" (which gives partial credit) is a separate figure.
+
 ### Sessions, attempts, scores
 
 ```sql

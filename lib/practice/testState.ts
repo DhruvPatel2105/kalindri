@@ -22,6 +22,8 @@ export interface QuestionSnapshot {
   id: string;
   type: QuestionType;
   payload: unknown;
+  /** The question's version (questions.version) when this snapshot was taken; absent on tests started before versions existed. */
+  version?: number;
 }
 
 export interface TestState {
@@ -35,6 +37,7 @@ const testStateSchema = z.object({
       id: z.string().min(1),
       type: z.string().min(1),
       payload: z.unknown(),
+      version: z.number().int().positive().optional(),
     }),
   ),
   answers: z.record(z.string(), z.unknown()).default({}),
@@ -54,6 +57,7 @@ export function extractTestState(state: unknown): TestState | null {
       // Trusted: only lib/practice/testEngine.ts writes this, with real enum values.
       type: s.type as QuestionType,
       payload: s.payload,
+      ...(s.version !== undefined ? { version: s.version } : {}),
     })),
     answers: parsed.data.answers,
   };

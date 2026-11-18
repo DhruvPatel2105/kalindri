@@ -49,7 +49,7 @@ export interface HistoryPage {
 
 export async function getHistoryPage(
   db: Database,
-  params: { userId: string; requestedPage: number },
+  params: { userId: string; requestedPage: number; /** Only this question type (the per-type dashboard). */ type?: QuestionType },
 ): Promise<HistoryPage> {
   // Practice tests only (sessions made by the test engine have a set); an
   // abandoned session isn't history.
@@ -58,9 +58,14 @@ export async function getHistoryPage(
     eq(sessions.mode, "practice"),
     isNotNull(sessions.questionSetId),
     inArray(sessions.status, ["in_progress", "completed"]),
+    ...(params.type ? [eq(questionSets.type, params.type)] : []),
   );
 
-  const [totalRow] = await db.select({ value: count() }).from(sessions).where(where);
+  const [totalRow] = await db
+    .select({ value: count() })
+    .from(sessions)
+    .innerJoin(questionSets, eq(sessions.questionSetId, questionSets.id))
+    .where(where);
   const total = Number(totalRow?.value ?? 0);
   const pagination = paginate(total, params.requestedPage, PAGE_SIZE);
 
@@ -69,7 +74,7 @@ export async function getHistoryPage(
       id: sessions.id,
       setId: sessions.questionSetId,
       status: sessions.status,
-      retryOf: sessions.retryOfSessionId,
+      sessionType: sessions.sessionType,
       questionIds: sessions.questionIds,
       startedAt: sessions.startedAt,
       completedAt: sessions.completedAt,
@@ -108,7 +113,7 @@ export async function getHistoryPage(
           status: row.status,
           depth,
           label: retryLabel(depth),
-          isRetry: row.retryOf !== null,
+          isRetry: row.sessionType === "INCORRECT_PRACTICE",
           questionCount: row.questionIds?.length ?? 0,
           startedAt: row.startedAt,
           completedAt: row.completedAt,

@@ -74,12 +74,20 @@ export default async function PracticeBrowsePage({
           </Link>
           <span className="text-[#ddd9d0]">|</span>
           <span className="text-sm font-semibold text-[#1e2a2a]">{label}</span>
-          <Link
-            href="/practice/history"
-            className="ml-auto text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]"
-          >
-            Practice history
-          </Link>
+          <div className="ml-auto flex items-center gap-4">
+            <Link
+              href={`/practice/${type}/progress`}
+              className="text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]"
+            >
+              Your progress
+            </Link>
+            <Link
+              href="/practice/history"
+              className="text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]"
+            >
+              Practice history
+            </Link>
+          </div>
         </div>
       </header>
 

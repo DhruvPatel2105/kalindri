@@ -2,7 +2,15 @@ import { describe, expect, it } from "vitest";
 
 import { scoreDeterministic } from "@/lib/scoring/registry";
 
-import { parseStoredSummary, questionsToReview, resultKind, summarizeTest } from "./testResults";
+import {
+  accuracyPercent,
+  completionPercent,
+  percentOf,
+  parseStoredSummary,
+  questionsToReview,
+  resultKind,
+  summarizeTest,
+} from "./testResults";
 import { emptyResponseFor } from "./testState";
 
 describe("summarizeTest", () => {
@@ -160,8 +168,8 @@ describe("summarizeTest counts and accuracy", () => {
     expect(s.correct + s.partial + s.incorrect + s.unanswered + s.unscored).toBe(s.totalQuestions);
   });
 
-  it("accuracy is full-marks questions over answered, unanswered left out", () => {
-    expect(summarizeTest(outcomes).accuracyPercent).toBe(50); // 2 of 4 answered
+  it("accuracy is correct answers over ALL questions; unanswered and partly correct count as not correct", () => {
+    expect(summarizeTest(outcomes).accuracyPercent).toBe(40); // 2 correct of 5 questions
   });
 
   it("accuracy differs from the marks percentage", () => {
@@ -169,17 +177,30 @@ describe("summarizeTest counts and accuracy", () => {
     expect(s.percent).toBe(Math.round((4 / 9) * 100)); // 2+1+0+1 of 2+2+2+1+2
   });
 
-  it("answers still awaiting a mark are in neither the counts nor the accuracy", () => {
+  it("accuracy is withheld while an answer is still awaiting its mark, rather than understated", () => {
     const s = summarizeTest([
       { answered: true, score: null, maxScore: 2 },
       { answered: true, score: 2, maxScore: 2 },
     ]);
-    expect(s).toMatchObject({ correct: 1, unscored: 1, accuracyPercent: 100 });
+    expect(s).toMatchObject({ correct: 1, unscored: 1, accuracyPercent: null });
   });
 
-  it("no answers means no accuracy", () => {
-    expect(summarizeTest([{ answered: false, score: null, maxScore: 1 }]).accuracyPercent).toBeNull();
+  it("answering nothing is 0% accuracy; a test with no questions has none", () => {
+    expect(summarizeTest([{ answered: false, score: null, maxScore: 1 }]).accuracyPercent).toBe(0);
     expect(summarizeTest([]).accuracyPercent).toBeNull();
+  });
+
+  it("a blank question and a wrong one both count as not correct", () => {
+    const blank = summarizeTest([
+      { answered: true, score: 1, maxScore: 1 },
+      { answered: false, score: null, maxScore: 1 },
+    ]);
+    const wrong = summarizeTest([
+      { answered: true, score: 1, maxScore: 1 },
+      { answered: true, score: 0, maxScore: 1 },
+    ]);
+    expect(blank.accuracyPercent).toBe(50);
+    expect(wrong.accuracyPercent).toBe(50);
   });
 });
 
@@ -205,7 +226,31 @@ describe("questionsToReview", () => {
   });
 });
 
+describe("accuracyPercent", () => {
+  it("is correct ÷ total × 100, rounded", () => {
+    expect(accuracyPercent(10, 15)).toBe(67);
+    expect(accuracyPercent(15, 15)).toBe(100);
+    expect(accuracyPercent(0, 15)).toBe(0);
+  });
+
+  it("is null when there are no questions, never NaN or a divide by zero", () => {
+    expect(accuracyPercent(0, 0)).toBeNull();
+    expect(accuracyPercent(3, -1)).toBeNull();
+  });
+});
+
 describe("parseStoredSummary", () => {
+  it("recomputes accuracy from the counts, ignoring a figure stored under an older definition", () => {
+    const summary = summarizeTest([
+      { answered: true, score: 2, maxScore: 2 },
+      { answered: true, score: 0, maxScore: 2 },
+      { answered: false, score: null, maxScore: 2 },
+      { answered: false, score: null, maxScore: 2 },
+    ]);
+    const stale = { ...summary, accuracyPercent: 50 }; // old formula: 1 of 2 answered
+    expect(parseStoredSummary(JSON.parse(JSON.stringify(stale)))?.accuracyPercent).toBe(25); // 1 of 4 questions
+  });
+
   it("round-trips a summary through JSON", () => {
     const summary = summarizeTest([
       { answered: true, score: 2, maxScore: 2 },
@@ -224,5 +269,47 @@ describe("parseStoredSummary", () => {
     for (const bad of [null, undefined, 5, "x", {}, { score: 1 }, { ...summarizeTest([]), correct: -1 }]) {
       expect(parseStoredSummary(bad)).toBeNull();
     }
+  });
+});
+
+describe("percentOf (the one shared percentage)", () => {
+  it("rounds to a whole number", () => {
+    expect(percentOf(1, 3)).toBe(33);
+    expect(percentOf(2, 3)).toBe(67);
+    expect(percentOf(1, 8)).toBe(13); // 12.5 rounds up
+  });
+
+  it("an empty or invalid denominator is null, never NaN or Infinity", () => {
+    for (const d of [0, -1, Number.NaN]) expect(percentOf(5, d)).toBeNull();
+    expect(percentOf(Number.NaN, 5)).toBeNull();
+  });
+});
+
+describe("completion rate", () => {
+  it("is attempted ÷ total × 100, independent of whether the answers were right", () => {
+    expect(completionPercent(12, 15)).toBe(80);
+    const s = summarizeTest([
+      { answered: true, score: 0, maxScore: 2 }, // attempted, wrong
+      { answered: true, score: 2, maxScore: 2 },
+      { answered: false, score: null, maxScore: 2 },
+      { answered: false, score: null, maxScore: 2 },
+    ]);
+    expect(s.completionPercent).toBe(50);
+    expect(s.accuracyPercent).toBe(25);
+  });
+
+  it("is available even while answers await a mark (attempted is known), and null for an empty test", () => {
+    expect(summarizeTest([{ answered: true, score: null, maxScore: 2 }]).completionPercent).toBe(100);
+    expect(summarizeTest([]).completionPercent).toBeNull();
+  });
+
+  it("is recomputed from the stored counts, so older stored summaries get it too", () => {
+    const summary = summarizeTest([
+      { answered: true, score: 2, maxScore: 2 },
+      { answered: false, score: null, maxScore: 2 },
+    ]);
+    const old = JSON.parse(JSON.stringify(summary));
+    delete old.completionPercent; // saved before the field existed
+    expect(parseStoredSummary(old)?.completionPercent).toBe(50);
   });
 });

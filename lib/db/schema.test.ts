@@ -57,7 +57,7 @@ const EXPECTED_COLUMNS: Record<string, string[]> = {
   ],
   questions: [
     "id", "org_id", "external_id", "type", "part", "payload", "difficulty",
-    "derived_difficulty", "tags", "accent", "audio_url", "image_url", "status",
+    "version", "derived_difficulty", "tags", "accent", "audio_url", "image_url", "status",
     "is_active", "source", "source_notes", "is_seed_data", "created_at",
     "updated_at",
   ],
@@ -71,12 +71,12 @@ const EXPECTED_COLUMNS: Record<string, string[]> = {
   ],
   sessions: [
     "id", "org_id", "user_id", "mode", "blueprint_id", "mock_id",
-    "question_set_id", "retry_of_session_id", "question_ids", "current_item_index", "state", "result_summary", "is_timed",
+    "question_set_id", "retry_of_session_id", "root_session_id", "session_type", "question_ids", "current_item_index", "state", "result_summary", "is_timed",
     "is_scored_for_analytics", "status", "started_at", "completed_at",
   ],
   attempts: [
     "id", "org_id", "session_id", "user_id", "question_id", "question_snapshot",
-    "response", "audio_url", "status", "counts_toward_stats",
+    "question_type", "question_version", "is_correct", "scoring_rules", "response", "audio_url", "status", "counts_toward_stats",
     "time_taken_seconds", "started_at", "submitted_at",
   ],
   scores: [

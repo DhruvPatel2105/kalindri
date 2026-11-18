@@ -17,7 +17,9 @@
 import {
   type AnyPgColumn,
   boolean,
+  check,
   date,
+  index,
   integer,
   jsonb,
   numeric,
@@ -29,6 +31,7 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 /* -------------------------------------------------------------------------- */
 /*  Enums                                                                      */
@@ -102,6 +105,16 @@ export const sessionStatus = pgEnum("session_status", [
   "in_progress",
   "completed",
   "abandoned",
+]);
+
+/**
+ * What kind of practice a session is: the whole set (FULL_PRACTICE) or a
+ * retry of just the questions an earlier session didn't get full marks on
+ * (INCORRECT_PRACTICE).
+ */
+export const practiceSessionType = pgEnum("session_type", [
+  "FULL_PRACTICE",
+  "INCORRECT_PRACTICE",
 ]);
 
 export const attemptStatus = pgEnum("attempt_status", [
@@ -256,6 +269,13 @@ export const questions = pgTable("questions", {
   type: questionType("type").notNull(),
   part: integer("part"),
   payload: jsonb("payload").notNull(),
+  /**
+   * Starts at 1 and goes up by one whenever `payload` changes (a database
+   * trigger does this, so it holds for edits from anywhere). Attempts record
+   * the version they were taken against; the content itself is frozen in the
+   * session and attempt snapshots, so a later edit never changes history.
+   */
+  version: integer("version").notNull().default(1),
   difficulty: questionDifficulty("difficulty"),
   derivedDifficulty: numeric("derived_difficulty"),
   tags: text("tags").array(),
@@ -364,16 +384,32 @@ export const sessions = pgTable("sessions", {
   mode: sessionMode("mode").notNull(),
   blueprintId: uuid("blueprint_id").references(() => mockBlueprints.id),
   mockId: uuid("mock_id").references(() => mocks.id),
-  /** The question set being sat, for practice-test sessions (null otherwise). */
+  /**
+   * The ORIGINAL question set being sat (the spec's original_question_set_id),
+   * for practice-test sessions (null otherwise). A retry keeps its original's
+   * set, so every session in a retry journey names the same set.
+   */
   questionSetId: uuid("question_set_id").references(() => questionSets.id),
   /**
-   * Set on a "practise the questions I got wrong" session: the finished
-   * session whose not-fully-correct questions this one repeats. Retries chain
-   * (retry of a retry); a session has at most one retry (unique index).
+   * The spec's parent_session_id: the immediately previous session in a retry
+   * journey — the finished session whose not-fully-correct questions this one
+   * repeats. Null on a full practice. Retries chain (retry of a retry); a
+   * session has at most one retry (unique index).
    */
   retryOfSessionId: uuid("retry_of_session_id").references(
     (): AnyPgColumn => sessions.id,
   ),
+  /**
+   * The first full practice session of the retry journey this session belongs
+   * to. On a full practice it is the session's own id; on a retry it is the
+   * parent's root. Lets a whole journey be read with one query. Null on
+   * sessions that aren't practice tests.
+   */
+  rootSessionId: uuid("root_session_id").references(
+    (): AnyPgColumn => sessions.id,
+  ),
+  /** FULL_PRACTICE or INCORRECT_PRACTICE; null on sessions that aren't practice tests. */
+  sessionType: practiceSessionType("session_type"),
   questionIds: uuid("question_ids").array(),
   currentItemIndex: integer("current_item_index").notNull().default(0),
   state: jsonb("state"),
@@ -395,6 +431,17 @@ export const sessions = pgTable("sessions", {
   completedAt: timestamp("completed_at", { withTimezone: true }),
 }, (table) => [
   uniqueIndex("sessions_retry_of_session_id_unique").on(table.retryOfSessionId),
+  index("sessions_root_session_id_idx").on(table.rootSessionId),
+  // A retry has a parent and a full practice has none.
+  check(
+    "sessions_type_matches_parent",
+    sql`${table.sessionType} IS NULL OR (${table.sessionType} = 'FULL_PRACTICE') = (${table.retryOfSessionId} IS NULL)`,
+  ),
+  // A full practice is its own root.
+  check(
+    "sessions_full_practice_is_own_root",
+    sql`${table.retryOfSessionId} IS NOT NULL OR ${table.rootSessionId} IS NULL OR ${table.rootSessionId} = ${table.id}`,
+  ),
 ]);
 
 export const attempts = pgTable("attempts", {
@@ -409,8 +456,33 @@ export const attempts = pgTable("attempts", {
   questionId: uuid("question_id")
     .notNull()
     .references(() => questions.id),
+  /**
+   * The question payload exactly as the student saw it — passage, options and
+   * the answer key (for fill-in-the-blanks, the expected answer of every
+   * blank). Frozen when the test starts and copied here at submit, so editing
+   * the question later never changes this attempt's review or marks.
+   */
   questionSnapshot: jsonb("question_snapshot").notNull(),
+  /** The question's type and version when it was sat (null on attempts saved before these were recorded). */
+  questionType: questionType("question_type"),
+  questionVersion: integer("question_version"),
+  /**
+   * The student's answer, as submitted; null when the question was left blank.
+   * Every question in a submitted practice test has an attempt row: answered
+   * ones are 'submitted', blank ones 'abandoned' with no response and
+   * counts_toward_stats = false.
+   */
   response: jsonb("response"),
+  /** Full marks? Set when the attempt is scored; null until then (and for blank questions: false). */
+  isCorrect: boolean("is_correct"),
+  /**
+   * The scoring rules the attempt was marked under (scorer, plain-words rule,
+   * scorer version — see lib/practice/scoringRules.ts), saved at submit so a
+   * historical report can still say how it was marked if the rules change.
+   * Null on attempts saved before this was recorded, and on types not scored
+   * deterministically.
+   */
+  scoringRules: jsonb("scoring_rules"),
   audioUrl: text("audio_url"),
   status: attemptStatus("status").notNull(),
   countsTowardStats: boolean("counts_toward_stats").notNull().default(false),
@@ -419,7 +491,10 @@ export const attempts = pgTable("attempts", {
     .notNull()
     .defaultNow(),
   submittedAt: timestamp("submitted_at", { withTimezone: true }),
-});
+}, (table) => [
+  // Question mastery reads a student's attempts grouped by question.
+  index("attempts_user_question_idx").on(table.userId, table.questionId),
+]);
 
 export const scores = pgTable("scores", {
   id: pkId(),
