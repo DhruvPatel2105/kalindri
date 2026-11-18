@@ -1,0 +1,11 @@
+// FIB_READING (drag from a word bank) — one question per block.
+// Put each CORRECT answer in [square brackets] where the blank goes, in order.
+// "Unused:" lists the wrong words (at least one). Each word may appear only
+// once across the answers and the Unused line (case ignored).
+// The passage may wrap over several lines. Lines starting with // are ignored.
+// This file is made-up example content — keep real questions in import-data/.
+
+#1 Community Centre
+The community centre [opens] at nine and [offers] swimming lessons for
+every [age]. Registration is [online] and takes only a few minutes.
+Unused: closes, hides, school

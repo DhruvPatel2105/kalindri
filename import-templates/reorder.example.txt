@@ -1,0 +1,13 @@
+// REORDER_PARAGRAPH — one question per block, starting with "#<number> <title>".
+// "Answer:" is the READING ORDER of the listed sentences: "3, 1, 2, 4" means
+// read sentence 3 first, then 1, then 2, then 4. List the sentences in the
+// scrambled order from your source; the importer puts them in correct order.
+// Sentences must be numbered 1, 2, 3... Lines starting with // are ignored.
+// This file is made-up example content — keep real questions in import-data/.
+
+#1 Snow Removal
+Answer: 3, 1, 2, 4
+1. Crews then salt the main roads.
+2. Side streets are cleared last.
+3. The city declares a snow event when a storm is forecast.
+4. Residents are asked to move parked cars so plows can finish.

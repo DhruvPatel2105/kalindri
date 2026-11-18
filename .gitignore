@@ -46,3 +46,6 @@ yarn-error.log*
 .vscode/*
 !.vscode/extensions.json
 .env*
+
+# real institute question files — must never be committed
+import-data/

@@ -1,0 +1,11 @@
+// FIB_RW (dropdown per blank) — one question per block.
+// Write every blank as [correct | wrong | wrong | wrong]: EXACTLY 4 options,
+// and the FIRST one is the correct answer. (The importer shuffles the order
+// so the stored list never gives it away.) Every blank has its own options.
+// The passage may wrap over several lines. Lines starting with // are ignored.
+// This file is made-up example content — keep real questions in import-data/.
+
+#1 Transit Pass
+Riders [renew | renews | renewing | renewed] their pass each month and
+[keep | keeps | keeping | kept] the receipt. The pass is [valid | validly | validity | validate]
+on all city routes.

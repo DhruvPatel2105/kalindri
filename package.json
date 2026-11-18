@@ -17,7 +17,8 @@
     "db:seed": "tsx --env-file-if-exists=.env.local lib/db/seed.ts",
     "db:seed:questions": "tsx --env-file-if-exists=.env.local lib/db/seedQuestions.ts",
     "create-admin": "tsx --env-file-if-exists=.env.local lib/db/create-admin.ts",
-    "verify-question": "tsx --env-file-if-exists=.env.local lib/db/verifySeedQuestion.ts"
+    "verify-question": "tsx --env-file-if-exists=.env.local lib/db/verifySeedQuestion.ts",
+    "import-questions": "tsx --env-file-if-exists=.env.local lib/db/importQuestions.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.5.2",
