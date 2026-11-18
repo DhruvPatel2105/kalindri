@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
@@ -9,6 +10,7 @@ import type { McsReadingPayload } from "@/lib/questions/schemas/mcs-reading";
 import type { ReorderParagraphPayload } from "@/lib/questions/schemas/reorder-paragraph";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
 
+import { BookmarkButton } from "./BookmarkButton";
 import { PracticeQuestion } from "./PracticeQuestion";
 import { PracticeQuestionDropdownBlanks } from "./PracticeQuestionDropdownBlanks";
 import { PracticeQuestionMultiSelect } from "./PracticeQuestionMultiSelect";
@@ -125,13 +127,41 @@ export default async function PracticeTypePage({
     );
   }
 
+  const typeLabels: Partial<Record<QuestionType, string>> = {
+    REORDER_PARAGRAPH: "Reorder Paragraph",
+    FIB_RW: "R&W Fill in the Blanks",
+    FIB_READING: "Reading Fill in the Blanks",
+    MCS_READING: "Multiple Choice (Single)",
+    MCM_READING: "Multiple Choice (Multiple)",
+  };
+  const label = typeLabels[question.type] ?? question.type;
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-2xl flex-col gap-6 bg-[#f4f2ee] px-4 py-10">
-      <h1 className="text-xl font-semibold text-[#1e2a2a]">
-        Practice — {question.type}
-      </h1>
-      {questionUi}
-    </main>
+    <div className="min-h-screen bg-[#f4f2ee]">
+      {/* ── top bar ── */}
+      <header className="sticky top-0 z-10 border-b border-[#e6e2d9] bg-white px-6 py-3">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/"
+              className="text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]"
+            >
+              ← Back
+            </Link>
+            <span className="text-[#ddd9d0]">|</span>
+            <span className="text-sm font-semibold text-[#1e2a2a]">
+              {label}
+            </span>
+          </div>
+          <BookmarkButton />
+        </div>
+      </header>
+
+      {/* ── question body ── */}
+      <main className="mx-auto flex max-w-2xl flex-col gap-6 px-4 py-8">
+        {questionUi}
+      </main>
+    </div>
   );
 }
 

@@ -8,27 +8,6 @@ import {
   type SubmitAttemptResult,
 } from "@/lib/practice/submitAttempt";
 
-/**
- * FIB_RW — click a blank, a list of choices appears, pick one. Reuses
- * design/components/DropdownBlank.dc.html's interaction exactly: it's a
- * native `<select>` per blank (its own "click reveals a list" is just the
- * browser's own dropdown behaviour), not the drag-from-a-shared-pool
- * interaction PracticeQuestionWordBank.tsx (FIB_READING) uses — the two
- * types have genuinely different UIs despite sharing a scorer.
- *
- * `blanks` prop carries ONLY each blank's `options` — never
- * `correct_option`, which is the answer key and only ever revealed
- * post-submission. `parts` is the passage split on its `{{n}}` markers,
- * safe pre-submission (the markers carry no answer content).
- *
- * Per-blank correctness in the result comes straight from
- * `result.result.words` (WordBySpellingResult) — not re-derived from
- * questionSnapshot a second way, same reasoning as
- * PracticeQuestionWordBank.tsx: the scorer's own output already carries
- * expected/submitted/correct per blank, so reimplementing that comparison
- * here would just be a second place for it to silently drift from the real
- * scoring result.
- */
 export function PracticeQuestionDropdownBlanks({
   sessionId,
   parts,
@@ -76,12 +55,14 @@ export function PracticeQuestionDropdownBlanks({
     router.refresh();
   }
 
-  // WordBySpellingResult specifically — the only DeterministicScoreResult
-  // variant with a `words` array. Checked narrowing, not a cast.
   const wordResults =
     result?.scored && result.result && "words" in result.result
       ? result.result.words
       : null;
+
+  const score = result?.result?.score ?? 0;
+  const maxScore = result?.result?.maxScore ?? blanks.length;
+  const allCorrect = score === maxScore;
 
   return (
     <div className="flex flex-col gap-6">
@@ -90,12 +71,12 @@ export function PracticeQuestionDropdownBlanks({
         will appear. Select the appropriate answer choice for each blank.
       </p>
 
+      {/* ── passage with inline dropdowns ── */}
       <div className="rounded border-l-[3px] border-[#1f6f6b] bg-[#fafaf8] px-7 py-6">
         <p className="text-base leading-loose text-[#283634]">
           {parts.map((text, i) => {
             const blank = blanks[i];
             const wordResult = wordResults?.[i];
-
             return (
               <span key={i}>
                 {text}
@@ -103,12 +84,12 @@ export function PracticeQuestionDropdownBlanks({
                   <select
                     value={selected[i] ?? ""}
                     disabled={Boolean(result)}
-                    onChange={(event) => handleSelect(i, event.target.value)}
+                    onChange={(e) => handleSelect(i, e.target.value)}
                     className={`mx-1.5 inline-block rounded border px-2 py-1 align-middle text-sm ${
                       result
                         ? wordResult?.correct
-                          ? "border-[#1f6f6b] bg-[#eaf2f1] font-medium text-[#173534]"
-                          : "border-[#b0472f] bg-white text-[#b0472f]"
+                          ? "border-[#1f6f6b] bg-[#eaf2f1] font-medium text-[#17544f]"
+                          : "border-[#b0472f] bg-[#fdf2f0] text-[#b0472f]"
                         : selected[i]
                           ? "cursor-pointer border-[#1f6f6b] bg-[#eaf2f1] font-medium text-[#173534]"
                           : "cursor-pointer border-[#a9c4c1] bg-white text-[#7d8a88]"
@@ -134,6 +115,7 @@ export function PracticeQuestionDropdownBlanks({
         </p>
       ) : null}
 
+      {/* ── pre-submit footer ── */}
       {!result ? (
         <div className="flex items-center justify-between gap-4">
           <span className="text-xs text-[#7d8a88]">
@@ -144,75 +126,109 @@ export function PracticeQuestionDropdownBlanks({
             type="button"
             onClick={handleSubmit}
             disabled={isPending}
-            className="w-fit flex-none rounded bg-[#1f6f6b] px-4 py-2 text-sm font-medium text-white hover:bg-[#17544f] disabled:opacity-60"
+            className="w-fit flex-none rounded bg-[#1f6f6b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#17544f] disabled:opacity-60"
           >
             {isPending ? "Submitting…" : "Submit"}
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-3 rounded border border-[#ddd9d0] bg-white p-4">
-          {wordResults && result.result ? (
-            <>
-              <p
-                className={`text-lg font-semibold ${
-                  result.result.score === result.result.maxScore
-                    ? "text-[#1f6f6b]"
-                    : "text-[#b0472f]"
-                }`}
-              >
-                {result.result.score}/{result.result.maxScore}
-              </p>
-              <div className="flex flex-col gap-2">
-                {wordResults.map((wordResult, index) => (
-                  <div
-                    key={index}
-                    className={`flex items-start gap-2 rounded border px-3 py-2 text-sm ${
-                      wordResult.correct
-                        ? "border-[#1f6f6b] bg-[#fafaf8]"
-                        : "border-[#b0472f] bg-white"
+        /* ── results panel ── */
+        <div className="flex flex-col gap-4 rounded border border-[#ddd9d0] bg-white p-5">
+
+          {/* score header */}
+          <div className="flex items-center gap-3 border-b border-[#f0ede5] pb-4">
+            <span
+              className={`text-2xl font-bold ${allCorrect ? "text-[#1f6f6b]" : score === 0 ? "text-[#b0472f]" : "text-[#1e2a2a]"}`}
+            >
+              {score}/{maxScore}
+            </span>
+            <span
+              className={`rounded px-2.5 py-1 text-xs font-semibold ${
+                allCorrect
+                  ? "bg-[#eaf2f1] text-[#17544f]"
+                  : score === 0
+                    ? "bg-[#fdf2f0] text-[#b0472f]"
+                    : "bg-[#fbf3e3] text-[#8a6a1e]"
+              }`}
+            >
+              {allCorrect
+                ? "Perfect"
+                : score === 0
+                  ? "All incorrect"
+                  : `${maxScore - score} mistake${maxScore - score === 1 ? "" : "s"}`}
+            </span>
+          </div>
+
+          {/* per-blank answer rows */}
+          {wordResults ? (
+            <div className="flex flex-col gap-2">
+              {wordResults.map((w, i) => (
+                <div
+                  key={i}
+                  className={`flex items-start gap-3 rounded border px-4 py-3 text-sm ${
+                    w.correct
+                      ? "border-[#bcd6d3] bg-[#f4faf9]"
+                      : "border-[#e8c4bc] bg-[#fdf6f5]"
+                  }`}
+                >
+                  {/* index + tick/cross */}
+                  <span
+                    className={`mt-0.5 flex h-5 w-5 flex-none items-center justify-center rounded-full text-xs font-bold ${
+                      w.correct
+                        ? "bg-[#1f6f6b] text-white"
+                        : "bg-[#b0472f] text-white"
                     }`}
                   >
-                    <span
-                      className={
-                        wordResult.correct
-                          ? "flex-none text-[#1f6f6b]"
-                          : "flex-none text-[#b0472f]"
-                      }
-                    >
-                      {wordResult.correct ? "✓" : "✗"}
+                    {w.correct ? "✓" : "✗"}
+                  </span>
+
+                  <div className="flex min-w-0 flex-col gap-0.5">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-[#7d8a88]">
+                      Blank {i + 1}
                     </span>
-                    <span className="text-[#1e2a2a]">
-                      Blank {index + 1}:{" "}
-                      {wordResult.submitted ? (
-                        <>
-                          you chose &ldquo;{wordResult.submitted}&rdquo;
-                        </>
-                      ) : (
-                        <>you left this blank</>
-                      )}
-                      {!wordResult.correct ? (
-                        <>
-                          {" "}
-                          — correct answer: &ldquo;{wordResult.expected}
-                          &rdquo;
-                        </>
-                      ) : null}
-                    </span>
+
+                    {w.correct ? (
+                      <span className="font-semibold text-[#17544f]">
+                        {w.submitted}
+                      </span>
+                    ) : (
+                      <div className="flex flex-wrap items-baseline gap-3">
+                        {/* user's wrong answer */}
+                        <span className="text-[#b0472f] line-through">
+                          {w.submitted || "(blank)"}
+                        </span>
+                        {/* arrow */}
+                        <span className="text-[#9aa39f]">→</span>
+                        {/* correct answer */}
+                        <span className="font-semibold text-[#17544f]">
+                          {w.expected}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                ))}
-              </div>
-            </>
+                </div>
+              ))}
+            </div>
           ) : (
             <p className="text-sm text-[#5c6a68]">{result.message}</p>
           )}
 
-          <button
-            type="button"
-            onClick={handleNextQuestion}
-            className="w-fit rounded bg-[#1f6f6b] px-4 py-2 text-sm font-medium text-white hover:bg-[#17544f]"
-          >
-            Next question
-          </button>
+          <div className="mt-1 flex gap-3">
+            <button
+              type="button"
+              onClick={handleNextQuestion}
+              className="rounded bg-[#1f6f6b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#17544f]"
+            >
+              Next question →
+            </button>
+            <button
+              type="button"
+              onClick={() => { setSelected({}); setResult(null); setError(null); }}
+              className="rounded border border-[#dcd8cf] bg-white px-5 py-2.5 text-sm font-semibold text-[#1e2a2a] hover:border-[#1f6f6b] hover:text-[#1f6f6b]"
+            >
+              Redo question
+            </button>
+          </div>
         </div>
       )}
     </div>
