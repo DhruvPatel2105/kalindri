@@ -424,3 +424,17 @@ One Zod schema per type in `lib/questions/schemas/`. Field definitions are in
 
 Required across all content-scored types: **`key_points: string[]`**. AI content scoring
 has nothing to score against without it.
+
+## user_activity_days (admin time tracking)
+
+One row per user per calendar day (America/Toronto): `seconds` of active time, `by_area` jsonb
+(test / practice / review / other), `first_active_at`, `last_active_at`. Unique on (user_id, day).
+
+- The browser (`ActivityTracker`) posts a heartbeat to `/api/activity` every 30 s, only while the tab is
+  visible and the user touched the page within 180 s.
+- The server credits the gap since that user's previous heartbeat if it is ≤ 90 s, otherwise 0
+  (`recordHeartbeat`, one upsert). One timeline per user, so several tabs never double count; refreshes
+  and navigation are seamless; closed/background tabs and long gaps add nothing.
+- Limits: up to ~180 s of idle tail can be counted; the first heartbeat of a day credits 0; someone reading
+  without touching the page for > 3 min stops counting.
+- Read only by admin pages (org-scoped). Not used for scoring or student-facing views.

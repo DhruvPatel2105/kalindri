@@ -232,6 +232,35 @@ export const activeSessions = pgTable("active_sessions", {
   index("active_sessions_user_id_idx").on(table.userId),
 ]);
 
+/**
+ * Time a student actively spent in the app, one row per student per day (in
+ * the app's activity time zone — see lib/activity/activity.ts). The browser
+ * sends a heartbeat while the student is really using the app; the server
+ * credits the time since that student's PREVIOUS heartbeat (capped), so the
+ * total follows the wall clock and two open tabs can't count the same minute
+ * twice. `by_area` splits the day's seconds by what they were doing
+ * (test / practice / review / other).
+ */
+export const userActivityDays = pgTable(
+  "user_activity_days",
+  {
+    id: pkId(),
+    orgId: orgId(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id),
+    day: date("day").notNull(),
+    seconds: integer("seconds").notNull().default(0),
+    byArea: jsonb("by_area").notNull().default({}),
+    firstActiveAt: timestamp("first_active_at", { withTimezone: true }).notNull().defaultNow(),
+    lastActiveAt: timestamp("last_active_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("user_activity_days_user_day_unique").on(table.userId, table.day),
+    index("user_activity_days_org_day_idx").on(table.orgId, table.day),
+  ],
+);
+
 export const sessionEvents = pgTable("session_events", {
   id: pkId(),
   orgId: orgId(),

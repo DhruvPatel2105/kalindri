@@ -1,6 +1,7 @@
 import { isAdminRole } from "@/lib/auth/isAdminRole";
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 
+import { ActivityTracker } from "./ActivityTracker";
 import { NavBar } from "./NavBar";
 
 /**
@@ -11,5 +12,10 @@ import { NavBar } from "./NavBar";
  */
 export async function AppNav() {
   const user = await requireActiveSession();
-  return <NavBar email={user.email} isAdmin={isAdminRole(user.role)} />;
+  return (
+    <>
+      <ActivityTracker />
+      <NavBar email={user.email} isAdmin={isAdminRole(user.role)} />
+    </>
+  );
 }

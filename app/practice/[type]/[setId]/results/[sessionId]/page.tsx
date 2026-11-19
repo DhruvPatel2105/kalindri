@@ -10,7 +10,6 @@ import {
   resultKind,
   type QuestionResultKind,
 } from "@/lib/practice/testResults";
-import { formatDuration } from "@/lib/practice/testState";
 import { QUESTION_TYPES } from "@/lib/questions/types";
 import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 
@@ -96,9 +95,6 @@ export default async function TestResultsPage({
   // The newest round is the one that can be retried or continued.
   const latest = chain[chain.length - 1];
   const latestMistakes = latest?.summary ? retryCount(latest.summary) : 0;
-  const elapsedMs = results.completedAt
-    ? results.completedAt.getTime() - results.startedAt.getTime()
-    : 0;
 
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
@@ -174,30 +170,11 @@ export default async function TestResultsPage({
           aria-label="Results breakdown"
           className="grid grid-cols-2 gap-3 sm:grid-cols-4"
         >
-          <Stat label="Total questions" value={String(summary.totalQuestions)} />
-          <Stat label="Correct" value={String(summary.correct)} tone="text-[#17544f]" hint="full marks" />
-          <Stat label="Partly correct" value={String(summary.partial)} tone="text-[#8a6a1e]" hint="some marks" />
-          <Stat label="Incorrect" value={String(summary.incorrect)} tone="text-[#b0472f]" hint="no marks" />
-          <Stat label="Unanswered" value={String(summary.unanswered)} hint="scored 0" />
-          <Stat
-            label="Completion rate"
-            value={summary.completionPercent !== null ? `${summary.completionPercent}%` : "—"}
-            hint="attempted out of all questions"
-          />
-          <Stat
-            label="Accuracy"
-            value={summary.accuracyPercent !== null ? `${summary.accuracyPercent}%` : "—"}
-            hint="correct out of all questions; unanswered count as not correct"
-          />
-          <Stat
-            label="Time taken"
-            value={formatDuration(elapsedMs)}
-            hint="start to submit, including time away"
-          />
-          <Stat
-            label="Started"
-            value={<LocalTime iso={results.startedAt.toISOString()} />}
-          />
+          <Stat label="Correct" value={String(summary.correct)} tone="text-[#17544f]" />
+          <Stat label="Incorrect" value={String(summary.incorrect + summary.unanswered)} tone="text-[#b0472f]" />
+          {summary.partial > 0 ? (
+            <Stat label="Partly correct" value={String(summary.partial)} tone="text-[#8a6a1e]" />
+          ) : null}
         </section>
 
         {/* ── practise incorrect questions ── */}

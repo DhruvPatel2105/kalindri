@@ -47,6 +47,9 @@ const EXPECTED_COLUMNS: Record<string, string[]> = {
     "id", "org_id", "user_id", "session_token", "ip_address", "user_agent",
     "geo_country", "geo_city", "created_at", "last_seen_at",
   ],
+  user_activity_days: [
+    "id", "org_id", "user_id", "day", "seconds", "by_area", "first_active_at", "last_active_at",
+  ],
   session_events: [
     "id", "org_id", "user_id", "event_type", "ip_address", "user_agent",
     "geo_country", "previous_ip", "previous_geo", "created_at",
@@ -158,8 +161,8 @@ describe("table presence", () => {
     expect([...tablesByName.keys()].sort()).toEqual(EXPECTED_TABLE_NAMES);
   });
 
-  it("defines all 25 tables", () => {
-    expect(tablesByName.size).toBe(25);
+  it("defines all 26 tables", () => {
+    expect(tablesByName.size).toBe(26);
   });
 });
 
