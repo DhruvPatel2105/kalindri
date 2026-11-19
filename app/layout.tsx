@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Libre_Franklin } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 
 const libreFranklin = Libre_Franklin({
@@ -21,6 +22,7 @@ export default function RootLayout({
     <html lang="en" className={libreFranklin.variable}>
       <body style={{ fontFamily: "var(--font-libre-franklin), Helvetica, sans-serif" }}>
         {children}
+        <SpeedInsights />
       </body>
     </html>
   );
