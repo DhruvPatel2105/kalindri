@@ -22,9 +22,9 @@
  * than the threshold stops being counted until they interact again.
  */
 
-export const HEARTBEAT_INTERVAL_S = 30;
+export const HEARTBEAT_INTERVAL_S = 60;
 /** One heartbeat may credit at most this much; a longer gap credits nothing. */
-export const MAX_CREDIT_S = 90;
+export const MAX_CREDIT_S = 150;
 /** No interaction for this long = idle: heartbeats stop. */
 export const IDLE_THRESHOLD_S = 180;
 /** Days (today, yesterday, ...) are calendar days in this zone. */

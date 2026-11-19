@@ -30,8 +30,13 @@ import * as schema from "@/lib/db/schema";
 
 type Database = PostgresJsDatabase<typeof schema>;
 
-const POOL_MAX = 5;
-const IDLE_TIMEOUT_S = 600;
+// On Vercel every serverless instance has its own pool, and the pooler's 15
+// clients are shared by ALL instances, so each one stays small and lets go of
+// idle connections quickly (an idle instance is frozen anyway). Locally one
+// process owns the budget, so it can hold more for longer.
+const ON_VERCEL = Boolean(process.env.VERCEL);
+const POOL_MAX = ON_VERCEL ? 2 : 5;
+const IDLE_TIMEOUT_S = ON_VERCEL ? 45 : 600;
 const CONNECT_TIMEOUT_S = 15;
 
 const globalForDb = globalThis as typeof globalThis & {
@@ -46,6 +51,9 @@ export function getDb(): Database {
     prepare,
     max: POOL_MAX,
     idle_timeout: IDLE_TIMEOUT_S,
+    // Recycle connections now and then (postgres.js default is 30-60 min; on
+    // Vercel shorter, so a long-lived instance never pins a pooler slot).
+    ...(ON_VERCEL ? { max_lifetime: 300 } : {}),
     connect_timeout: CONNECT_TIMEOUT_S,
   });
 
