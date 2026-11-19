@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import type { ClientQuestion } from "@/lib/practice/clientQuestion";
-import { formatClock, secondsRemaining } from "@/lib/practice/mock";
 import { saveProgress, submitTest } from "@/lib/practice/testActions";
 import { answerStatuses, clampIndex, countAnswered } from "@/lib/practice/testState";
 
@@ -32,11 +31,6 @@ const SAVE_DELAY_MS = 600;
  * student resumes where they were. Submitting waits for the queue to drain and re-sends any
  * answer that failed to save, so a flaky connection can't silently drop one.
  * No marks are shown until the test is submitted.
- *
- * Mock mode (`mock` prop): the same runner with ONE countdown for the whole
- * exam, started from the server's clock (so a refresh or a wrong device clock
- * can't add time), a different question type per question, and automatic
- * submission when the time runs out.
  */
 export function TestRunner({
   sessionId,
@@ -47,7 +41,6 @@ export function TestRunner({
   initialIndex,
   initialAnswers,
   questions,
-  mock,
 }: {
   sessionId: string;
   title: string;
@@ -58,13 +51,6 @@ export function TestRunner({
   initialIndex: number;
   initialAnswers: Record<string, unknown>;
   questions: ClientQuestion[];
-  mock?: {
-    deadlineIso: string;
-    /** The server's time when the page was built, to correct for a wrong device clock. */
-    serverNowIso: string;
-    /** The question type's name for each question, in order. */
-    typeLabels: string[];
-  };
 }) {
   const router = useRouter();
   const total = questions.length;
@@ -75,13 +61,6 @@ export function TestRunner({
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-
-  const clockSkewMs = useRef(mock ? Date.parse(mock.serverNowIso) - Date.now() : 0);
-  const [secondsLeft, setSecondsLeft] = useState(() =>
-    mock ? secondsRemaining(new Date(mock.deadlineIso), new Date(mock.serverNowIso)) : 0,
-  );
-  const autoSubmitted = useRef(false);
-  const submitRef = useRef<() => Promise<void>>(async () => {});
 
   const answersRef = useRef(answers);
   const indexRef = useRef(index);
@@ -197,24 +176,6 @@ export function TestRunner({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Mock only: tick the one countdown; at zero, submit whatever is answered.
-  useEffect(() => {
-    if (!mock) return;
-    const deadline = new Date(mock.deadlineIso);
-    const tick = () => {
-      const left = secondsRemaining(deadline, new Date(Date.now() + clockSkewMs.current));
-      setSecondsLeft(left);
-      if (left === 0 && !autoSubmitted.current) {
-        autoSubmitted.current = true;
-        setConfirming(false);
-        void submitRef.current();
-      }
-    };
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [mock]);
-
   async function handleSubmit() {
     setSubmitting(true);
     setSubmitError(null);
@@ -261,9 +222,6 @@ export function TestRunner({
     router.push(resultsHref);
   }
 
-  submitRef.current = handleSubmit;
-  const shownTypeLabel = mock ? (mock.typeLabels[index] ?? typeLabel) : typeLabel;
-
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
       {/* ── top bar ── */}
@@ -281,21 +239,10 @@ export function TestRunner({
               {title}
             </span>
             <span className="hidden text-xs text-[#7d8a88] sm:inline">
-              {shownTypeLabel}
+              {typeLabel}
             </span>
           </div>
           <div className="flex items-center gap-4">
-            {mock ? (
-              <span
-                role="timer"
-                aria-label="Time remaining"
-                className={`rounded px-2.5 py-1 font-mono text-sm font-semibold tabular-nums ${
-                  secondsLeft <= 300 ? "bg-[#fdf2f0] text-[#b0472f]" : "bg-[#eaf2f1] text-[#17544f]"
-                }`}
-              >
-                {formatClock(secondsLeft)}
-              </span>
-            ) : null}
             <span
               aria-live="polite"
               className={`text-xs ${saveStatus === "error" ? "font-semibold text-[#b0472f]" : "text-[#7d8a88]"}`}
@@ -319,7 +266,6 @@ export function TestRunner({
           <div className="flex items-baseline justify-between gap-4">
             <h1 className="text-sm font-semibold uppercase tracking-wide text-[#5c6a68]">
               Question {index + 1} of {total}
-              {mock ? <span className="ml-2 font-normal normal-case text-[#7d8a88]">· {shownTypeLabel}</span> : null}
             </h1>
             <span
               className={`rounded px-2 py-0.5 text-xs font-medium ${
@@ -381,7 +327,6 @@ export function TestRunner({
                   onClick={() => goTo(i)}
                   disabled={submitting}
                   aria-label={`Question ${i + 1}, ${answered ? "answered" : "not answered"}`}
-                  title={mock ? mock.typeLabels[i] : undefined}
                   aria-current={isCurrent ? "step" : undefined}
                   className={`h-9 rounded border text-sm font-medium ${
                     answered

@@ -195,22 +195,6 @@ export default async function HomePage() {
           })}
         </div>
 
-        {/* ── reading mock test ── */}
-        <div className="mb-8 flex flex-col gap-3 rounded border border-[#bcd6d3] bg-white px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-[#1e2a2a]">Reading Mock Test</h2>
-            <p className="mt-1 text-sm text-[#5c6a68]">
-              A full Reading section in exam order, with one countdown and results by question type.
-            </p>
-          </div>
-          <Link
-            href="/mock/reading"
-            className="w-fit rounded bg-[#1f6f6b] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#17544f]"
-          >
-            Take the mock →
-          </Link>
-        </div>
-
         {/* ── section heading ── */}
         <div className="mb-5 flex items-baseline justify-between gap-4">
           <h2 className="text-lg font-semibold text-[#1e2a2a]">

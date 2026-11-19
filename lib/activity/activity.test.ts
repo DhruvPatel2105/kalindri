@@ -76,8 +76,6 @@ describe("areaFromPath", () => {
   const SESSION = "b660ceb7-1428-4990-a598-90b074795ee3";
   it("classifies pages by what the student is doing", () => {
     expect(areaFromPath(`/practice/FIB_RW/${SET}`)).toBe("test");
-    expect(areaFromPath("/mock/reading/run")).toBe("test");
-    expect(areaFromPath("/mock/reading")).toBe("test");
     expect(areaFromPath(`/practice/FIB_RW/${SET}/session/${SESSION}`)).toBe("test");
     expect(areaFromPath(`/practice/FIB_RW/learn/${SET}`)).toBe("practice");
     expect(areaFromPath("/practice/FIB_RW/learn/sets")).toBe("practice");
