@@ -4,7 +4,7 @@ import { chosenPasswordProblem, MAX_PASSWORD_LENGTH } from "./chosenPassword";
 
 describe("chosenPasswordProblem", () => {
   it("accepts a normal password", () => {
-    expect(chosenPasswordProblem("abcdefgh123")).toBeNull();
+    expect(chosenPasswordProblem("Example-Password-1")).toBeNull();
     expect(chosenPasswordProblem("exactly8")).toBeNull();
     expect(chosenPasswordProblem("with spaces inside ok")).toBeNull();
   });
@@ -22,8 +22,8 @@ describe("chosenPasswordProblem", () => {
   });
 
   it("refuses leading or trailing spaces instead of silently trimming", () => {
-    expect(chosenPasswordProblem(" abcdefgh123")).toMatch(/space/);
-    expect(chosenPasswordProblem("abcdefgh123 ")).toMatch(/space/);
+    expect(chosenPasswordProblem(" Example-Password-1")).toMatch(/space/);
+    expect(chosenPasswordProblem("Example-Password-1 ")).toMatch(/space/);
   });
 
   it("refuses a single repeated character", () => {
