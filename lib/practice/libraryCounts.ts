@@ -44,6 +44,7 @@ export async function getLibraryCounts(
           eq(questionSets.orgId, orgId),
           eq(questionSets.status, "published"),
           eq(questionSets.isActive, true),
+          eq(questionSets.isBank, false),
         ),
       )
       .groupBy(questionSets.type),

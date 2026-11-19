@@ -1,0 +1,2 @@
+ALTER TABLE "question_sets" ADD COLUMN "is_bank" boolean DEFAULT false NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "question_sets_one_bank_per_type" ON "question_sets" USING btree ("org_id","type") WHERE "question_sets"."is_bank";

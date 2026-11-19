@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { getDb } from "@/lib/db";
+import { getBankSummary } from "@/lib/practice/bank";
 import { getQuestionSetPage } from "@/lib/practice/listQuestionSets";
 import {
   describeSetDifficulty,
@@ -71,12 +72,18 @@ export async function SetBrowser({
   const questionType = type as QuestionType;
   const label = QUESTION_TYPE_LABELS[questionType];
 
-  const { total, pagination, items } = await getQuestionSetPage(getDb(), {
-    orgId: user.orgId,
-    userId: user.id,
-    type: questionType,
-    requestedPage: parsePageParam(pageParam),
-  });
+  // The set list and (for tests) the Mixed test card are independent reads.
+  const [{ total, pagination, items }, bank] = await Promise.all([
+    getQuestionSetPage(getDb(), {
+      orgId: user.orgId,
+      userId: user.id,
+      type: questionType,
+      requestedPage: parsePageParam(pageParam),
+    }),
+    mode === "test"
+      ? getBankSummary(getDb(), { userId: user.id, orgId: user.orgId, type: questionType })
+      : Promise.resolve(null),
+  ]);
   const { page, totalPages } = pagination;
 
   const pageHref = (n: number) =>
@@ -124,6 +131,39 @@ export async function SetBrowser({
               : `${total} question ${total === 1 ? "set" : "sets"} — ${config.blurb}`}
           </p>
         </div>
+
+        {bank ? (
+          <div className="flex flex-col gap-3 rounded-lg border border-[#bcd6d3] bg-white px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-[#1e2a2a]">Mixed test</p>
+              <p className="mt-1 text-xs text-[#5c6a68]">
+                Questions from the whole bank ({bank.poolSize} in total). You won&apos;t see a question again
+                until you&apos;ve answered every one.{" "}
+                {bank.remaining === bank.poolSize
+                  ? "Nothing answered yet this round."
+                  : `${bank.remaining} of ${bank.poolSize} left this round.`}
+                {bank.roundsCompleted > 0
+                  ? ` You've completed the bank ${bank.roundsCompleted} ${bank.roundsCompleted === 1 ? "time" : "times"}.`
+                  : ""}
+              </p>
+            </div>
+            {bank.inProgress ? (
+              <Link
+                href={`/practice/${type}/${bank.setId}`}
+                className="shrink-0 rounded bg-[#1f6f6b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#17544f]"
+              >
+                Continue
+              </Link>
+            ) : (
+              <StartTestControl
+                type={type}
+                setId={bank.setId}
+                total={bank.poolSize}
+                defaultCount={bank.remaining > 0 ? bank.remaining : bank.poolSize}
+              />
+            )}
+          </div>
+        ) : null}
 
         {items.length > 0 && (
           <ul className="flex flex-col gap-3">

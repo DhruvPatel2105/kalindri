@@ -59,6 +59,8 @@ export async function getQuestionSetPage(
     eq(questionSets.type, params.type),
     eq(questionSets.status, "published"),
     eq(questionSets.isActive, true),
+    // The hidden "Mixed test" bank set is not a set students browse.
+    eq(questionSets.isBank, false),
   );
 
   const { total, pagination, rows } = await fetchPage(

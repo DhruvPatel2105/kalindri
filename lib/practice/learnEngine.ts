@@ -399,6 +399,7 @@ export async function pickPracticeSetId(
     eq(questionSets.type, type),
     eq(questionSets.status, "published"),
     eq(questionSets.isActive, true),
+    eq(questionSets.isBank, false),
   );
 
   const [recent] = await db

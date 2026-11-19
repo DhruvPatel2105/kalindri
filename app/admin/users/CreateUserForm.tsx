@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react";
 
+import { chosenPasswordProblem, MIN_PASSWORD_LENGTH } from "@/lib/auth/chosenPassword";
+
 import { createUserAction, type CreateUserResult } from "./actions";
 
 /**
@@ -12,6 +14,9 @@ import { createUserAction, type CreateUserResult } from "./actions";
  */
 export function CreateUserForm() {
   const [email, setEmail] = useState("");
+  // Empty = generate a password; anything typed is used as the password.
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<"student" | "admin">("student");
   const [error, setError] = useState<string | null>(null);
   const [created, setCreated] = useState<CreateUserResult | null>(null);
@@ -22,11 +27,17 @@ export function CreateUserForm() {
     event.preventDefault();
     setError(null);
     setCopied(false);
+    const problem = password ? chosenPasswordProblem(password) : null;
+    if (problem) {
+      setError(problem);
+      return;
+    }
     startTransition(async () => {
       try {
-        const result = await createUserAction(email, role);
+        const result = await createUserAction(email, role, password);
         setCreated(result);
         setEmail("");
+        setPassword("");
         setRole("student");
       } catch (err) {
         setCreated(null);
@@ -38,7 +49,7 @@ export function CreateUserForm() {
   }
 
   async function handleCopy() {
-    if (!created) return;
+    if (!created?.password) return;
     await navigator.clipboard.writeText(
       `Email: ${created.email} / Password: ${created.password}`,
     );
@@ -90,6 +101,35 @@ export function CreateUserForm() {
           </select>
         </div>
 
+        <div className="flex flex-col gap-1">
+          <label
+            htmlFor="new-user-password"
+            className="text-xs font-medium text-[#5c6a68]"
+          >
+            Password <span className="font-normal">(optional)</span>
+          </label>
+          <div className="flex items-center gap-2">
+            <input
+              id="new-user-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Leave blank to generate"
+              minLength={password ? MIN_PASSWORD_LENGTH : undefined}
+              className="w-56 rounded border border-[#ddd9d0] bg-white px-3 py-1.5 text-sm text-[#1e2a2a] focus:border-[#1f6f6b] focus:outline-none"
+            />
+            <label className="flex items-center gap-1 text-xs text-[#5c6a68]">
+              <input
+                type="checkbox"
+                checked={showPassword}
+                onChange={(event) => setShowPassword(event.target.checked)}
+              />
+              Show
+            </label>
+          </div>
+        </div>
+
         <button
           type="submit"
           disabled={isPending}
@@ -106,24 +146,33 @@ export function CreateUserForm() {
       ) : null}
 
       {created ? (
-        <div className="flex flex-col gap-2 rounded border-l-[3px] border-[#1f6f6b] bg-[#fafaf8] p-3">
-          <p className="text-sm font-medium text-[#1e2a2a]">
-            Account created. This password is shown once — copy it now; it
-            cannot be retrieved again after you leave this page.
-          </p>
-          <p className="font-mono text-sm text-[#1e2a2a]">
-            Email: {created.email}
-            <br />
-            Password: {created.password}
-          </p>
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="w-fit rounded bg-[#1f6f6b] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#17544f]"
-          >
-            {copied ? "Copied!" : "Copy credentials"}
-          </button>
-        </div>
+        created.password ? (
+          <div className="flex flex-col gap-2 rounded border-l-[3px] border-[#1f6f6b] bg-[#fafaf8] p-3">
+            <p className="text-sm font-medium text-[#1e2a2a]">
+              Account created. This generated password is shown once — copy it
+              now; it cannot be retrieved again after you leave this page.
+            </p>
+            <p className="font-mono text-sm text-[#1e2a2a]">
+              Email: {created.email}
+              <br />
+              Password: {created.password}
+            </p>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="w-fit rounded bg-[#1f6f6b] px-3 py-1.5 text-sm font-medium text-white hover:bg-[#17544f]"
+            >
+              {copied ? "Copied!" : "Copy credentials"}
+            </button>
+          </div>
+        ) : (
+          <div className="rounded border-l-[3px] border-[#1f6f6b] bg-[#fafaf8] p-3">
+            <p className="text-sm font-medium text-[#1e2a2a]">
+              Account created for {created.email} with the password you chose.
+              It isn&apos;t shown again — share it with the student yourself.
+            </p>
+          </div>
+        )
       ) : null}
     </div>
   );

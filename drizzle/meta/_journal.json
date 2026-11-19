@@ -71,6 +71,13 @@
       "when": 1795030331041,
       "tag": "0009_yielding_overlord",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1795095354863,
+      "tag": "0010_fearless_patch",
+      "breakpoints": true
     }
   ]
 }

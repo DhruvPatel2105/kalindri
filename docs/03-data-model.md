@@ -173,6 +173,18 @@ can't double-record a mark) and `sessions_one_open_per_set` allows one unfinishe
 (user, set, mode) — one open test and one open Practice — so a double click or a second tab resumes
 the same session instead of creating another. Writers insert with ON CONFLICT DO NOTHING and re-read.
 
+**Mixed tests and question rotation.** Each question type has one hidden "bank set" per org
+(`question_sets.is_bank = true`, titled "Mixed test — <type>", at most one per type), mirroring the type's
+published questions. A Mixed test is an ordinary test of that set, so sessions, attempts, results, retries,
+history and dashboards all work unchanged — but its questions are chosen by rotation
+(`lib/practice/rotation.ts`, shared by every question type): a student is never given a question they have
+answered in the current round until they have answered every question in the bank; then a new round starts.
+"Answered" is derived from existing data — `attempts` with `status = 'submitted'` and
+`counts_toward_stats = true` (blank questions are 'abandoned'; retries and Practice never count) — so there is
+no extra history table, and it persists across sessions and devices. Questions in a student's open tests are
+reserved so two tests started together don't overlap, and a unique index gives one open test per set.
+Bank sets are excluded from set lists, Practice and set building.
+
 **Performance calculations** (practice dashboards). Only `completed` sessions count. Every percentage
 goes through one helper (`percentOf`: rounded, `null` — never NaN — for an empty denominator) and is
 **weighted**: it is built from summed counts (total correct ÷ total questions), never by averaging

@@ -325,8 +325,19 @@ export const questionSets = pgTable("question_sets", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
+  /**
+   * True for the one system "Mixed test" set per org and question type: a
+   * test of it draws its questions from ALL the type's published questions
+   * with rotation (lib/practice/rotation.ts), so it is hidden from the set
+   * lists and from set building. Its question_ids mirror the type's bank.
+   */
+  isBank: boolean("is_bank").notNull().default(false),
 }, (table) => [
   index("question_sets_org_type_status_idx").on(table.orgId, table.type, table.status),
+  // At most one bank set per org and type.
+  uniqueIndex("question_sets_one_bank_per_type")
+    .on(table.orgId, table.type)
+    .where(sql`${table.isBank}`),
 ]);
 
 /**

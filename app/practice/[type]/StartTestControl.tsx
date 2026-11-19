@@ -14,13 +14,16 @@ export function StartTestControl({
   type,
   setId,
   total,
+  defaultCount,
 }: {
   type: string;
   setId: string;
   total: number;
+  /** What the box starts with; the whole set (`total`) if omitted. */
+  defaultCount?: number;
 }) {
   const router = useRouter();
-  const [text, setText] = useState(String(total));
+  const [text, setText] = useState(String(Math.min(Math.max(1, defaultCount ?? total), total)));
   // True from the click until the test page has loaded: the button shows
   // "Starting…" and can't be pressed again, so one click is one test.
   const [isPending, startTransition] = useTransition();

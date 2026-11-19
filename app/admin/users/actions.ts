@@ -15,6 +15,7 @@ import { and, eq } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { chosenPasswordProblem } from "@/lib/auth/chosenPassword";
 import { generatePassword } from "@/lib/auth/generatePassword";
 import { requireAdmin } from "@/lib/auth/requireAdmin";
 import { getDb } from "@/lib/db";
@@ -32,12 +33,18 @@ const createUserSchema = z.object({
 
 export interface CreateUserResult {
   email: string;
-  password: string;
+  /** Present only when the password was generated for the admin: that is the one time it can be seen. A password the admin chose is never sent back. */
+  password: string | null;
 }
 
+/**
+ * Creates a student or admin account. `chosenPassword` is the password the
+ * admin typed; leave it out (or blank) to have a strong one generated.
+ */
 export async function createUserAction(
   email: string,
   role: "student" | "admin",
+  chosenPassword?: string,
 ): Promise<CreateUserResult> {
   const admin = await requireAdmin();
 
@@ -48,6 +55,14 @@ export async function createUserAction(
     );
   }
   const { email: validEmail, role: validRole } = parsed.data;
+
+  // An empty box means "generate one". Anything typed is checked here, on the
+  // server — the form's own check is only a convenience.
+  const useChosen = typeof chosenPassword === "string" && chosenPassword.length > 0;
+  if (useChosen) {
+    const problem = chosenPasswordProblem(chosenPassword);
+    if (problem) throw new Error(problem);
+  }
 
   const db = getDb();
 
@@ -65,7 +80,7 @@ export async function createUserAction(
     throw new Error(`A user with email "${validEmail}" already exists.`);
   }
 
-  const password = generatePassword();
+  const password = useChosen ? chosenPassword : generatePassword();
   const supabaseAdmin = getSupabaseAdminClient();
 
   const { data: authData, error: authError } =
@@ -102,14 +117,15 @@ export async function createUserAction(
     action: "create_user",
     targetType: "user",
     targetId: authData.user.id,
-    details: { email: validEmail, role: validRole },
+    details: { email: validEmail, role: validRole, passwordSource: useChosen ? "admin_chosen" : "generated" },
   });
 
   revalidatePath("/admin/users");
 
-  // The ONLY time this plaintext password exists anywhere outside
-  // Supabase's own hashed storage — never logged, never persisted by us.
-  return { email: validEmail, password };
+  // A generated password is shown once, here — the ONLY time it exists
+  // outside Supabase's hashed storage; never logged, never persisted by us. A
+  // password the admin chose is never echoed back.
+  return { email: validEmail, password: useChosen ? null : password };
 }
 
 export async function toggleUserActiveAction(userId: string): Promise<void> {

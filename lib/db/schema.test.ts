@@ -63,7 +63,7 @@ const EXPECTED_COLUMNS: Record<string, string[]> = {
   ],
   question_sets: [
     "id", "org_id", "type", "title", "difficulty", "question_ids", "status",
-    "is_active", "is_seed_data", "created_at", "updated_at",
+    "is_active", "is_seed_data", "is_bank", "created_at", "updated_at",
   ],
   question_bookmarks: [
     "id", "org_id", "user_id", "question_id", "color", "created_at", "updated_at",

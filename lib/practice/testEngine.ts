@@ -56,7 +56,9 @@ import {
   type DeterministicScoreResult,
 } from "@/lib/scoring/registry";
 
+import { getBankSet, loadRotationInputs } from "./bank";
 import { pickQuestionIds } from "./questionCount";
+import { selectRotation } from "./rotation";
 import { retryLabel } from "./retry";
 import { SCORER_VERSION, scoringRulesFor } from "./scoringRules";
 import { validateDeterministicResponse } from "./responseSchemas";
@@ -171,7 +173,12 @@ export async function startOrResumeTest(
 
   const [[set], [open], rows] = await Promise.all([
     db
-      .select({ id: questionSets.id, title: questionSets.title, questionIds: questionSets.questionIds })
+      .select({
+        id: questionSets.id,
+        title: questionSets.title,
+        questionIds: questionSets.questionIds,
+        isBank: questionSets.isBank,
+      })
       .from(questionSets)
       .where(visibleSet)
       .limit(1),
@@ -221,10 +228,49 @@ export async function startOrResumeTest(
   const resumed = asActive(open);
   if (resumed) return resumed;
 
-  // Fresh start: the set's own order is kept.
-  const byId = new Map(rows.map((row) => [row.id, row]));
+  // Fresh start. A MIXED test (the type's bank set) draws its questions with
+  // rotation — never a question the student has answered this round — from
+  // the whole bank; an ordinary set keeps its own questions and order.
+  let source = rows;
+  let order: readonly string[] = set.questionIds;
+  if (set.isBank) {
+    const inputs = await loadRotationInputs(db, { userId: user.id, orgId: user.orgId, type });
+    const chosen = selectRotation({
+      pool: inputs.pool,
+      history: inputs.history,
+      reserved: inputs.reserved,
+      count: options.count ?? inputs.pool.length,
+    });
+    if (chosen.length === 0) {
+      throw new QuestionNotAvailableError(
+        "No questions are available for a mixed test right now (all are in your open tests).",
+      );
+    }
+    source = await db
+      .select({
+        id: questions.id,
+        type: questions.type,
+        payload: questions.payload,
+        version: questions.version,
+      })
+      .from(questions)
+      .where(
+        and(
+          inArray(questions.id, chosen),
+          eq(questions.orgId, user.orgId),
+          eq(questions.type, type),
+          eq(questions.status, "published"),
+          eq(questions.isActive, true),
+        ),
+      );
+    order = chosen;
+    // Keep the set's id list equal to the bank (also creates nothing new here).
+    await getBankSet(db, { orgId: user.orgId, type, pool: inputs.pool });
+  }
+
+  const byId = new Map(source.map((row) => [row.id, row]));
   const snapshots: QuestionSnapshot[] = [];
-  for (const id of set.questionIds) {
+  for (const id of order) {
     const row = byId.get(id);
     if (row) {
       snapshots.push({ id: row.id, type: row.type, payload: row.payload, version: row.version });
@@ -238,7 +284,8 @@ export async function startOrResumeTest(
   }
 
   // A shorter test: a random selection of the set's questions, in set order.
-  if (options.count !== undefined) {
+  // (A mixed test has already been sized by the rotation above.)
+  if (options.count !== undefined && !set.isBank) {
     const keep = new Set(
       pickQuestionIds(
         snapshots.map((snapshot) => snapshot.id),

@@ -86,7 +86,14 @@ async function main(): Promise<void> {
     const existingSets = await db
       .select({ questionIds: questionSets.questionIds })
       .from(questionSets)
-      .where(and(eq(questionSets.orgId, org.id), eq(questionSets.type, type)));
+      .where(
+        and(
+          eq(questionSets.orgId, org.id),
+          eq(questionSets.type, type),
+          // the hidden Mixed-test bank set lists every question; it isn't a grouping
+          eq(questionSets.isBank, false),
+        ),
+      );
     const grouped = new Set(existingSets.flatMap((s) => s.questionIds));
 
     const candidates = await db
