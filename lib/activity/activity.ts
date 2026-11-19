@@ -55,6 +55,7 @@ export function creditSeconds(previous: Date | null, now: Date): number {
 }
 
 const UUID = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}";
+const MOCK = /^\/mock(?:\/|$)/i;
 const LEARN = new RegExp(`^/practice/[A-Z_]+/learn(?:/|$)`, "i");
 const TEST = new RegExp(`^/practice/[A-Z_]+/${UUID}(?:/session/${UUID})?/?$`, "i");
 const REVIEW = /^\/practice\/(?:history|[A-Z_]+\/(?:progress|tests|[0-9a-f-]{36}\/results))/i;
@@ -62,6 +63,7 @@ const REVIEW = /^\/practice\/(?:history|[A-Z_]+\/(?:progress|tests|[0-9a-f-]{36}
 /** Which activity a page counts as. Unknown paths are "other" — never an error. */
 export function areaFromPath(path: string): ActivityArea {
   const clean = path.split("?")[0]?.split("#")[0] ?? "";
+  if (MOCK.test(clean)) return "test";
   if (LEARN.test(clean)) return "practice";
   if (TEST.test(clean)) return "test";
   if (REVIEW.test(clean)) return "review";

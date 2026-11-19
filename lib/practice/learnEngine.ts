@@ -45,6 +45,7 @@ import type { BookmarkColor } from "./bookmarkColors";
 import { toClientQuestion, type ClientQuestion } from "./clientQuestion";
 import type { Difficulty } from "./questionList";
 import { questionHeader } from "./questionHeader";
+import { pickQuestionIds, seededRandom } from "./questionCount";
 import { validateDeterministicResponse } from "./responseSchemas";
 import { buildQuestionReview, type QuestionReview } from "./reviewModel";
 import { scoringRulesFor } from "./scoringRules";
@@ -146,6 +147,8 @@ export async function loadLearnSet(
   user: SessionUser,
   type: QuestionType,
   setId: string,
+  /** Practise only some of the set's questions: `count` of them, picked at random but repeatably from `seed`. */
+  pick?: { count: number; seed: string },
 ): Promise<LearnSet> {
   const db = getDb();
 
@@ -216,10 +219,14 @@ export async function loadLearnSet(
   const bookmarks = new Map(bookmarkRows.map((row) => [row.questionId, row.color]));
 
   const byId = new Map(rows.map((row) => [row.id, row]));
-  const ordered = set.questionIds.flatMap((id) => {
+  const available = set.questionIds.flatMap((id) => {
     const row = byId.get(id);
     return row ? [row] : [];
   });
+  const chosen = pick
+    ? new Set(pickQuestionIds(available.map((row) => row.id), pick.count, seededRandom(pick.seed)))
+    : null;
+  const ordered = chosen ? available.filter((row) => chosen.has(row.id)) : available;
   if (ordered.length === 0) {
     throw new QuestionNotAvailableError(`Question set ${setId} has no published questions.`);
   }

@@ -65,7 +65,7 @@ export default async function PracticeHistoryPage({
         />
 
         <p className="text-xs text-[#7d8a88]">
-          Marks are raw marks for each set — not a PTE score or a CLB level.
+          Marks are raw marks for each test — not a PTE score or a CLB level.
         </p>
       </main>
     </div>

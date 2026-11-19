@@ -10,9 +10,9 @@ import { loadWeights } from "@/lib/scoring/loadWeights";
 
 /**
  * Where a question type lands: two separate ways to work through it.
- *   Test      — attempt a whole set and get a final score (/tests)
- *   Practice  — all of a set's questions on one page, reveal answers and
- *               retry individual questions (/learn)
+ *   Test      — choose how many questions and get a final score (/tests)
+ *   Practice  — choose how many questions, reveal answers and retry
+ *               individual questions (/learn)
  * Test and Practice results are kept separate: a Practice attempt never
  * counts toward test scores, accuracy or the test dashboards.
  */

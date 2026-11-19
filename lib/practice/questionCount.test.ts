@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { clampCount, parseCountParam, pickQuestionIds } from "./questionCount";
+import { clampCount, parseCountParam, pickQuestionIds, seededRandom } from "./questionCount";
 
 const ids = Array.from({ length: 15 }, (_, i) => `q${i + 1}`);
 
@@ -75,5 +75,25 @@ describe("pickQuestionIds", () => {
     const copy = [...ids];
     pickQuestionIds(ids, 4);
     expect(ids).toEqual(copy);
+  });
+});
+
+describe("seededRandom", () => {
+  it("gives the same picks for the same seed, and stays in 0..1", () => {
+    const a = pickQuestionIds(ids, 5, seededRandom("abc123"));
+    const b = pickQuestionIds(ids, 5, seededRandom("abc123"));
+    expect(a).toEqual(b);
+    expect(a).toHaveLength(5);
+    const r = seededRandom("x");
+    for (let i = 0; i < 100; i++) {
+      const v = r();
+      expect(v).toBeGreaterThanOrEqual(0);
+      expect(v).toBeLessThan(1);
+    }
+  });
+
+  it("different seeds usually pick different questions", () => {
+    const picks = new Set(["a", "b", "c", "d", "e", "f"].map((s) => pickQuestionIds(ids, 5, seededRandom(s)).join()));
+    expect(picks.size).toBeGreaterThan(1);
   });
 });

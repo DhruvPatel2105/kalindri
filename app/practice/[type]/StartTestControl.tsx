@@ -6,21 +6,25 @@ import { useState, useTransition } from "react";
 import { clampCount } from "@/lib/practice/questionCount";
 
 /**
- * "How many questions?" + Start test, for one set. The student picks a number
- * from 1 to the set's total (the whole set by default); the test then has that
- * many questions, picked at random from the set and kept in the set's order.
+ * "How many questions?" + Start, for the whole question bank of a type. The
+ * student picks a number from 1 to the total; a test (or Practice) then has
+ * that many questions, picked at random and kept in the bank's order.
+ * Practice also gets a random seed so a refresh shows the same questions.
  */
 export function StartTestControl({
   type,
   setId,
   total,
   defaultCount,
+  mode = "test",
 }: {
   type: string;
   setId: string;
   total: number;
   /** What the box starts with; the whole set (`total`) if omitted. */
   defaultCount?: number;
+  /** "test" sits a scored test; "practice" opens the practice page. */
+  mode?: "test" | "practice";
 }) {
   const router = useRouter();
   const [text, setText] = useState(String(Math.min(Math.max(1, defaultCount ?? total), total)));
@@ -34,9 +38,14 @@ export function StartTestControl({
 
   function start() {
     if (!valid || isPending) return;
-    // The whole set needs no parameter.
+    const seed = Math.random().toString(36).slice(2, 10);
+    // A whole-bank test needs no parameter.
     const href =
-      count >= total ? `/practice/${type}/${setId}` : `/practice/${type}/${setId}?count=${count}`;
+      mode === "practice"
+        ? `/practice/${type}/learn/${setId}?count=${count}&s=${seed}`
+        : count >= total
+          ? `/practice/${type}/${setId}`
+          : `/practice/${type}/${setId}?count=${count}`;
     startTransition(() => router.push(href));
   }
 
@@ -70,7 +79,7 @@ export function StartTestControl({
         aria-busy={isPending}
         className="rounded bg-[#1f6f6b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#17544f] disabled:opacity-50"
       >
-        {isPending ? "Starting…" : "Start test"}
+        {isPending ? "Starting…" : mode === "practice" ? "Start practice" : "Start test"}
       </button>
     </form>
   );

@@ -49,7 +49,7 @@ const READING_TYPES = [
   },
 ] as const;
 
-// Multiple-choice Reading types: shown only once they have a published set, and
+// Multiple-choice Reading types: shown only once they have published questions, and
 // with no weight line — docs/02-scoring-spec.md §10 has no derived weight for them.
 const MULTIPLE_CHOICE_TYPES = [
   {
@@ -104,7 +104,7 @@ export default async function HomePage() {
   ]);
   const cards: TypeCard[] = [
     ...READING_TYPES,
-    ...MULTIPLE_CHOICE_TYPES.filter((qt) => (counts.get(qt.type)?.sets ?? 0) > 0),
+    ...MULTIPLE_CHOICE_TYPES.filter((qt) => (counts.get(qt.type)?.questions ?? 0) > 0),
   ];
   const totalQuestions = cards.reduce(
     (sum, qt) => sum + (counts.get(qt.type)?.questions ?? 0),
@@ -195,6 +195,22 @@ export default async function HomePage() {
           })}
         </div>
 
+        {/* ── reading mock test ── */}
+        <div className="mb-8 flex flex-col gap-3 rounded border border-[#bcd6d3] bg-white px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-[#1e2a2a]">Reading Mock Test</h2>
+            <p className="mt-1 text-sm text-[#5c6a68]">
+              A full Reading section in exam order, with one countdown and results by question type.
+            </p>
+          </div>
+          <Link
+            href="/mock/reading"
+            className="w-fit rounded bg-[#1f6f6b] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#17544f]"
+          >
+            Take the mock →
+          </Link>
+        </div>
+
         {/* ── section heading ── */}
         <div className="mb-5 flex items-baseline justify-between gap-4">
           <h2 className="text-lg font-semibold text-[#1e2a2a]">
@@ -247,10 +263,8 @@ export default async function HomePage() {
                     </span>
                     <span className="text-xs text-[#7d8a88]">
                       <span className="font-semibold text-[#5c6a68]">Bank</span>{" "}
-                      {counts.get(qt.type)?.questions ?? 0} questions ·{" "}
-                      {(counts.get(qt.type)?.sets ?? 0) === 0
-                        ? "no sets yet"
-                        : `${counts.get(qt.type)?.sets} ${counts.get(qt.type)?.sets === 1 ? "set" : "sets"}`}
+                      {counts.get(qt.type)?.questions ?? 0}{" "}
+                      {(counts.get(qt.type)?.questions ?? 0) === 1 ? "question" : "questions"}
                     </span>
                   </div>
                 </div>
@@ -293,7 +307,7 @@ export default async function HomePage() {
               },
               {
                 title: "Review after you submit",
-                body: "Sit the whole set, then go through each question: your answer beside the correct one, green for right and red for wrong. Questions you left blank are flagged too.",
+                body: "Sit your test, then go through each question: your answer beside the correct one, green for right and red for wrong. Questions you left blank are flagged too.",
               },
               {
                 title: "Adjacent-pair scoring for Reorder",

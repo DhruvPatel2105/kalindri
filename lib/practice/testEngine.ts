@@ -647,7 +647,7 @@ export async function finishTest(
  * call repeatedly — it only touches unscored attempts — which is what makes
  * a failed scoring job retryable without the student re-answering.
  */
-async function scoreUnscoredAttempts(sessionId: string): Promise<void> {
+export async function scoreUnscoredAttempts(sessionId: string): Promise<void> {
   const db = getDb();
 
   const pending = await db

@@ -28,7 +28,7 @@ import { Stat } from "../../../../../_components/Stat";
  * retry round by round. Marks and answers only appear here, never during the
  * test.
  *
- * These are RAW MARKS for one set — not a PTE 10–90 score and not a CLB
+ * These are RAW MARKS for one test — not a PTE 10–90 score and not a CLB
  * estimate (CLAUDE.md scoring honesty rules), and the page says so.
  */
 const KIND_LABEL: Record<QuestionResultKind, string> = {
@@ -153,7 +153,7 @@ export default async function TestResultsPage({
             </span>
           </div>
           <p className="text-xs text-[#7d8a88]">
-            Raw marks for this set only — not a PTE score or a CLB level, and
+            Raw marks for this test only — not a PTE score or a CLB level, and
             not a prediction of either.
           </p>
           {summary.unscored > 0 ? (
@@ -292,13 +292,13 @@ export default async function TestResultsPage({
             href={`/practice/${type}/${setId}`}
             className="rounded border border-[#dcd8cf] bg-white px-5 py-2.5 text-sm font-semibold text-[#1e2a2a] hover:border-[#1f6f6b] hover:text-[#1f6f6b]"
           >
-            Retake this set
+            Take another test
           </Link>
           <Link
             href={`/practice/${type}/tests`}
             className="rounded border border-[#dcd8cf] bg-white px-5 py-2.5 text-sm font-semibold text-[#1e2a2a] hover:border-[#1f6f6b] hover:text-[#1f6f6b]"
           >
-            Choose another set
+            Choose number of questions
           </Link>
         </div>
 

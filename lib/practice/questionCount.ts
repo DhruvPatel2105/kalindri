@@ -22,6 +22,27 @@ export function clampCount(requested: number | undefined, available: number): nu
 }
 
 /**
+ * A small deterministic random-number generator (mulberry32) seeded from text,
+ * so a Practice page opened with the same `?s=` seed shows the same questions
+ * on every refresh instead of reshuffling.
+ */
+export function seededRandom(seed: string): () => number {
+  let h = 1779033703 ^ seed.length;
+  for (let i = 0; i < seed.length; i++) {
+    h = Math.imul(h ^ seed.charCodeAt(i), 3432918353);
+    h = (h << 13) | (h >>> 19);
+  }
+  let a = h >>> 0;
+  return () => {
+    a = (a + 0x6d2b79f5) >>> 0;
+    let t = a;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
  * Picks `count` of `ids` at random (no repeats) and returns them in their
  * ORIGINAL order, so a shorter test keeps the set's own sequence. Asking for
  * all of them (or more) returns every id untouched. `random` is injectable

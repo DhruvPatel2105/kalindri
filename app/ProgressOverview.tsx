@@ -152,7 +152,7 @@ export async function ProgressOverview({ user }: { user: SessionUser }) {
                 with {improvement.previousPercent}% on the one before (
                 {improvement.points > 0 ? "+" : improvement.points < 0 ? "−" : ""}
                 {Math.abs(improvement.points)} {Math.abs(improvement.points) === 1 ? "point" : "points"}).
-                Different types and sets vary in difficulty
+                Different question types vary in difficulty
                 {overall.full.sessions < 4 ? ", and with so few tests this is only a rough guide" : ""}.
               </p>
             ) : (

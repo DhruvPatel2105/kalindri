@@ -102,7 +102,7 @@ export default async function TypeProgressPage({
               href={`/practice/${type}/tests`}
               className="w-fit rounded bg-[#1f6f6b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#17544f]"
             >
-              Choose a set
+              Start a test
             </Link>
           </section>
         ) : (
@@ -186,7 +186,7 @@ export default async function TypeProgressPage({
                         Your latest full test scored {improvement.latestPercent}% accuracy, compared with{" "}
                         {improvement.previousPercent}% on the one before.
                         {stats.full.sessions < 4 ? " Only a few tests so far, so treat it as a rough guide." : ""}{" "}
-                        Different sets vary in difficulty.
+                        Different questions vary in difficulty.
                       </p>
                     </>
                   ) : (
@@ -249,7 +249,7 @@ export default async function TypeProgressPage({
         )}
 
         <p className="text-xs text-[#7d8a88]">
-          Scores are raw marks for each set — not a PTE score or a CLB level, and not a prediction of
+          Scores are raw marks for each test — not a PTE score or a CLB level, and not a prediction of
           either. Accuracy is correct answers ÷ all questions, so unanswered questions count as not
           correct; completion rate is attempted questions ÷ all questions. Percentages are calculated
           from totals across sessions, not by averaging each session&apos;s percentage. Only completed

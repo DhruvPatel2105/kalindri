@@ -176,7 +176,7 @@ export function PracticeRunner({
               {attempted} of {questions.length} attempted · {correct} correct
             </span>
             <Link href={listHref} className="text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]">
-              Change set
+              New practice
             </Link>
           </div>
         </div>

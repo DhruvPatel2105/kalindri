@@ -110,6 +110,9 @@ export function NavBar({ email, isAdmin }: { email: string; isAdmin: boolean }) 
           >
             Practice <span aria-hidden="true" className="text-[10px]">{menuOpen ? "▲" : "▼"}</span>
           </button>
+          <Link href="/mock/reading" className={link("/mock")}>
+            Mock test
+          </Link>
           <Link href="/practice/history" className={link("/practice/history")}>
             Test history
           </Link>
@@ -161,6 +164,9 @@ export function NavBar({ email, isAdmin }: { email: string; isAdmin: boolean }) 
           <div className="flex flex-col gap-1 px-4 py-3">
             <Link href="/" className={link("/", true)}>
               Home
+            </Link>
+            <Link href="/mock/reading" className={link("/mock")}>
+              Mock test
             </Link>
             <Link href="/practice/history" className={link("/practice/history")}>
               Test history
