@@ -8,6 +8,8 @@
  *   kind:  reorder       REORDER_PARAGRAPH            (lib/import/parseReorder.ts)
  *          fib-drag      FIB_READING, word bank       (lib/import/parseFibDrag.ts)
  *          fib-dropdown  FIB_RW, option list/blank    (lib/import/parseFibDropdown.ts)
+ *          mcm-reading   MCM_READING, multiple answers (lib/import/parseMcm.ts)
+ *          mcs-reading   MCS_READING, single answer    (lib/import/parseMcm.ts)
  *
  * Each parser's header documents its exact file format; working examples are
  * in import-templates/. Keep your real files in import-data/ (git-ignored) —
@@ -47,6 +49,7 @@ import postgres from "postgres";
 import type { ParsedFile } from "@/lib/import/blocks";
 import { parseFibDragFile } from "@/lib/import/parseFibDrag";
 import { parseFibDropdownFile } from "@/lib/import/parseFibDropdown";
+import { parseMcmFile, parseMcsFile } from "@/lib/import/parseMcm";
 import { parseReorderFile } from "@/lib/import/parseReorder";
 
 import { organizations, questions } from "./schema";
@@ -70,6 +73,16 @@ const KINDS = {
     prefix: "FIB-RW-INST",
     parse: (text: string): ParsedFile<unknown> => parseFibDropdownFile(text),
   },
+  "mcm-reading": {
+    type: "MCM_READING",
+    prefix: "MCM-READING-INST",
+    parse: (text: string): ParsedFile<unknown> => parseMcmFile(text),
+  },
+  "mcs-reading": {
+    type: "MCS_READING",
+    prefix: "MCS-READING-INST",
+    parse: (text: string): ParsedFile<unknown> => parseMcsFile(text),
+  },
 } as const;
 
 type Kind = keyof typeof KINDS;
@@ -79,7 +92,7 @@ function isKind(value: string): value is Kind {
 }
 
 const USAGE =
-  "Usage: npm run import-questions -- <reorder|fib-drag|fib-dropdown> <file> [--dry-run] [--publish] [--difficulty-only]";
+  "Usage: npm run import-questions -- <reorder|fib-drag|fib-dropdown|mcm-reading|mcs-reading> <file> [--dry-run] [--publish] [--difficulty-only]";
 
 async function main(): Promise<void> {
   const { values, positionals } = parseArgs({

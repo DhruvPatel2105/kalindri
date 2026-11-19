@@ -1,0 +1,14 @@
+// MCM_READING (multiple choice, multiple answers) — one question per block.
+// Passage lines, then the question (the last line before the options), then options.
+// Mark every correct option with ✓ and/or end with "Answer: B, D" (if both, they must agree).
+// A line that is just // EASY, // MEDIUM or // HARD sets the difficulty of the questions below it.
+// This file is made-up example content — keep real questions in import-data/.
+
+// EASY
+#1 Recycling
+Residents sort glass and cardboard for curbside pickup. Collection happens every week.
+Which materials are accepted?
+* A) Glass bottles ✓
+* B) Styrofoam
+* C) Cardboard ✓
+Answer: A, C
