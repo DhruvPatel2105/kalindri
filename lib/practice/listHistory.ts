@@ -18,7 +18,8 @@ import type * as schema from "@/lib/db/schema";
 import { questionSets, sessions } from "@/lib/db/schema";
 import type { QuestionType } from "@/lib/questions/types";
 
-import { PAGE_SIZE, paginate, type Pagination } from "./questionList";
+import { fetchPage } from "./fetchPage";
+import { PAGE_SIZE, type Pagination } from "./questionList";
 import { retryDepths, retryLabel } from "./retry";
 import { parseStoredSummary, type TestSummary } from "./testResults";
 
@@ -61,41 +62,52 @@ export async function getHistoryPage(
     ...(params.type ? [eq(questionSets.type, params.type)] : []),
   );
 
-  const [totalRow] = await db
-    .select({ value: count() })
-    .from(sessions)
-    .innerJoin(questionSets, eq(sessions.questionSetId, questionSets.id))
-    .where(where);
-  const total = Number(totalRow?.value ?? 0);
-  const pagination = paginate(total, params.requestedPage, PAGE_SIZE);
+  const { total, pagination, rows } = await fetchPage(
+    params.requestedPage,
+    PAGE_SIZE,
+    async () => {
+      // The set is only joined when filtering by its type.
+      const base = db.select({ value: count() }).from(sessions);
+      const [row] = await (params.type
+        ? base.innerJoin(questionSets, eq(sessions.questionSetId, questionSets.id)).where(where)
+        : base.where(where));
+      return Number(row?.value ?? 0);
+    },
+    (offset) =>
+      db
+        .select({
+          id: sessions.id,
+          setId: sessions.questionSetId,
+          status: sessions.status,
+          sessionType: sessions.sessionType,
+          rootSessionId: sessions.rootSessionId,
+          questionIds: sessions.questionIds,
+          startedAt: sessions.startedAt,
+          completedAt: sessions.completedAt,
+          resultSummary: sessions.resultSummary,
+          setTitle: questionSets.title,
+          type: questionSets.type,
+        })
+        .from(sessions)
+        .innerJoin(questionSets, eq(sessions.questionSetId, questionSets.id))
+        .where(where)
+        // Newest first; id as a tiebreaker so pages never overlap or skip rows.
+        .orderBy(desc(sessions.startedAt), desc(sessions.id))
+        .limit(PAGE_SIZE)
+        .offset(offset),
+  );
 
-  const rows = await db
-    .select({
-      id: sessions.id,
-      setId: sessions.questionSetId,
-      status: sessions.status,
-      sessionType: sessions.sessionType,
-      questionIds: sessions.questionIds,
-      startedAt: sessions.startedAt,
-      completedAt: sessions.completedAt,
-      resultSummary: sessions.resultSummary,
-      setTitle: questionSets.title,
-      type: questionSets.type,
-    })
-    .from(sessions)
-    .innerJoin(questionSets, eq(sessions.questionSetId, questionSets.id))
-    .where(where)
-    // Newest first; id as a tiebreaker so pages never overlap or skip rows.
-    .orderBy(desc(sessions.startedAt), desc(sessions.id))
-    .limit(PAGE_SIZE)
-    .offset(pagination.offset);
-
-  // Retry depth needs the whole parent chain, which may reach onto earlier
-  // pages — two ids per session, nothing heavy.
-  const links = await db
-    .select({ id: sessions.id, retryOfSessionId: sessions.retryOfSessionId })
-    .from(sessions)
-    .where(eq(sessions.userId, params.userId));
+  // Retry depth ("First retry", ...) needs each row's whole journey, which may
+  // reach onto other pages — so read just those journeys' links, not every
+  // session the student has ever had.
+  const roots = [...new Set(rows.flatMap((row) => (row.rootSessionId ? [row.rootSessionId] : [])))];
+  const links =
+    roots.length > 0
+      ? await db
+          .select({ id: sessions.id, retryOfSessionId: sessions.retryOfSessionId })
+          .from(sessions)
+          .where(and(eq(sessions.userId, params.userId), inArray(sessions.rootSessionId, roots)))
+      : [];
   const depths = retryDepths(links);
 
   return {

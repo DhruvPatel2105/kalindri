@@ -7,7 +7,7 @@ import "server-only";
  * content — and a student only ever reads and writes their own.
  */
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { getDb } from "@/lib/db";
@@ -23,23 +23,6 @@ export class BookmarkError extends Error {
     super(message);
     this.name = "BookmarkError";
   }
-}
-
-export async function getBookmarks(
-  user: SessionUser,
-  questionIds: readonly string[],
-): Promise<Map<string, BookmarkColor>> {
-  if (questionIds.length === 0) return new Map();
-  const rows = await getDb()
-    .select({ questionId: questionBookmarks.questionId, color: questionBookmarks.color })
-    .from(questionBookmarks)
-    .where(
-      and(
-        eq(questionBookmarks.userId, user.id),
-        inArray(questionBookmarks.questionId, [...questionIds]),
-      ),
-    );
-  return new Map(rows.map((row) => [row.questionId, row.color]));
 }
 
 /** Sets the bookmark colour of a question, or removes it when `color` is null. */

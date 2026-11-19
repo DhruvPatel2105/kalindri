@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
+import { isUuid } from "@/lib/validation/uuid";
 import { retryCount } from "@/lib/practice/retry";
 import { getRetryChain, getTestResults, TestSessionError } from "@/lib/practice/testEngine";
 import {
@@ -11,11 +12,12 @@ import {
 } from "@/lib/practice/testResults";
 import { formatDuration } from "@/lib/practice/testState";
 import { QUESTION_TYPES } from "@/lib/questions/types";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 
-import { TYPE_LABELS } from "../../../typeLabels";
 import { LocalTime } from "../../../../LocalTime";
 import { RetryChain } from "./RetryChain";
 import { StartRetryButton } from "./StartRetryButton";
+import { Stat } from "../../../../../_components/Stat";
 
 /**
  * The session dashboard a student lands on straight after Submit Test: marks
@@ -30,9 +32,6 @@ import { StartRetryButton } from "./StartRetryButton";
  * These are RAW MARKS for one set — not a PTE 10–90 score and not a CLB
  * estimate (CLAUDE.md scoring honesty rules), and the page says so.
  */
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 const KIND_LABEL: Record<QuestionResultKind, string> = {
   correct: "Correct",
   partial: "Partly correct",
@@ -64,15 +63,20 @@ export default async function TestResultsPage({
 
   if (
     !(QUESTION_TYPES as readonly string[]).includes(type) ||
-    !UUID_RE.test(setId) ||
-    !UUID_RE.test(sessionId)
+    !isUuid(setId) ||
+    !isUuid(sessionId)
   ) {
     notFound();
   }
 
+  // The results and the retry journey are independent reads: run them together.
   let results;
+  let chain;
   try {
-    results = await getTestResults(user, sessionId);
+    [results, chain] = await Promise.all([
+      getTestResults(user, sessionId),
+      getRetryChain(user, sessionId),
+    ]);
   } catch (err) {
     if (err instanceof TestSessionError) notFound();
     throw err;
@@ -84,11 +88,10 @@ export default async function TestResultsPage({
   }
 
   const { summary } = results;
-  const label = TYPE_LABELS[results.type] ?? results.type;
+  const label = QUESTION_TYPE_LABELS[results.type];
   const base = `/practice/${type}/${setId}/results/${sessionId}`;
   const reviewHref = (n: number) => `${base}/review?q=${n}`;
   const toReview = questionsToReview(results.questions);
-  const chain = await getRetryChain(user, sessionId);
   const current = chain.find((entry) => entry.sessionId === sessionId);
   // The newest round is the one that can be retried or continued.
   const latest = chain[chain.length - 1];
@@ -331,25 +334,6 @@ export default async function TestResultsPage({
   );
 }
 
-function Stat({
-  label,
-  value,
-  hint,
-  tone = "text-[#1e2a2a]",
-}: {
-  label: string;
-  value: React.ReactNode;
-  hint?: string;
-  tone?: string;
-}) {
-  return (
-    <div className="rounded-lg border border-[#ddd9d0] bg-white px-3 py-2.5">
-      <p className="text-xs text-[#7d8a88]">{label}</p>
-      <p className={`mt-0.5 text-lg font-semibold ${tone}`}>{value}</p>
-      {hint ? <p className="mt-0.5 text-[11px] leading-snug text-[#9aa39f]">{hint}</p> : null}
-    </div>
-  );
-}
 
 function Legend({ swatch, text }: { swatch: string; text: string }) {
   return (

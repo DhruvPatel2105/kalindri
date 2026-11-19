@@ -1,11 +1,12 @@
 import { notFound, redirect } from "next/navigation";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
+import { isUuid } from "@/lib/validation/uuid";
 import { toClientQuestion } from "@/lib/practice/clientQuestion";
 import { loadRetrySession, TestSessionError } from "@/lib/practice/testEngine";
 import { QUESTION_TYPES } from "@/lib/questions/types";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 
-import { TYPE_LABELS } from "../../../typeLabels";
 import { TestRunner } from "../../TestRunner";
 
 /**
@@ -15,9 +16,6 @@ import { TestRunner } from "../../TestRunner";
  * test, and a finished retry goes to its own results page, where it can be
  * retried again.
  */
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export default async function RetryTestPage({
   params,
 }: {
@@ -29,8 +27,8 @@ export default async function RetryTestPage({
 
   if (
     !(QUESTION_TYPES as readonly string[]).includes(type) ||
-    !UUID_RE.test(setId) ||
-    !UUID_RE.test(sessionId)
+    !isUuid(setId) ||
+    !isUuid(sessionId)
   ) {
     notFound();
   }
@@ -56,7 +54,7 @@ export default async function RetryTestPage({
     <TestRunner
       sessionId={test.sessionId}
       title={test.setTitle}
-      typeLabel={TYPE_LABELS[test.type] ?? test.type}
+      typeLabel={QUESTION_TYPE_LABELS[test.type]}
       // Leaving a retry goes back to the results it came from; progress is saved.
       listHref={`/practice/${type}/${setId}/results/${test.retryOfSessionId}`}
       resultsHref={`/practice/${type}/${setId}/results/${test.sessionId}`}

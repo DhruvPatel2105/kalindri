@@ -43,11 +43,13 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // Do not add logic between createServerClient and getUser(): this call is
-  // what actually refreshes an expired session token via the cookie.
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Do not add logic between createServerClient and getClaims(): this call is
+  // what refreshes an expired session token via the cookie. getClaims verifies
+  // the token's signature locally against the project's (cached) signing
+  // key — Supabase's current recommendation — rather than calling Supabase
+  // Auth over the network on every request as getUser() did.
+  const { data } = await supabase.auth.getClaims();
+  const user = data?.claims ?? null;
 
   const { pathname } = request.nextUrl;
 

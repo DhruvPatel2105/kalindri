@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { QUESTION_TYPE_LABELS, OFFICIAL_QUESTION_COUNTS } from "@/lib/questions/labels";
+import { isPractisable } from "@/lib/questions/practisable";
 import type { QuestionType, Skill } from "@/lib/questions/types";
 import {
   formatWeight,
@@ -33,8 +34,6 @@ const ROWS: readonly QuestionType[] = [
   "HIGHLIGHT_INCORRECT_WORDS",
   "WRITE_FROM_DICTATION",
 ];
-
-const LIVE: readonly QuestionType[] = ["REORDER_PARAGRAPH", "FIB_RW", "FIB_READING", "MCS_READING", "MCM_READING"];
 
 /** Weight bars are scaled to the biggest weight (Repeat Sentence in Speaking, 42.4%). */
 const BAR_MAX = 45;
@@ -114,7 +113,7 @@ export function WeightsTable({
             {ROWS.map((type) => (
               <tr key={type} className="border-b border-[#f0ede5] last:border-b-0">
                 <th scope="row" className="px-4 py-2.5 text-left font-medium text-[#1e2a2a]">
-                  {LIVE.includes(type) ? (
+                  {isPractisable(type) ? (
                     <Link href={`/practice/${type}`} className="hover:text-[#1f6f6b] hover:underline">
                       {QUESTION_TYPE_LABELS[type]}
                     </Link>

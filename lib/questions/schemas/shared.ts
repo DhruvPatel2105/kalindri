@@ -1,15 +1,17 @@
 /**
- * Pieces shared by more than one payload schema. Enums are re-derived from the
- * Drizzle schema (never re-typed) so they can't drift; the rest are field
- * shapes that repeat verbatim across docs/01-question-types.md.
+ * Pieces shared by more than one payload schema. Enum values come from
+ * lib/questions/enums.ts — the same constants the Drizzle schema builds its
+ * Postgres enums from — so they can't drift, and no database code is pulled
+ * in (these schemas also run in the browser). The rest are field shapes that
+ * repeat verbatim across docs/01-question-types.md.
  */
 
 import { z } from "zod";
 
-import { questionAccent, questionDifficulty } from "@/lib/db/schema";
+import { QUESTION_ACCENTS, QUESTION_DIFFICULTIES } from "@/lib/questions/enums";
 
-export const difficultySchema = z.enum(questionDifficulty.enumValues);
-export const accentSchema = z.enum(questionAccent.enumValues);
+export const difficultySchema = z.enum(QUESTION_DIFFICULTIES);
+export const accentSchema = z.enum(QUESTION_ACCENTS);
 export const registerSchema = z.enum(["formal", "informal"]);
 
 /** An MCQ option: `options[]` across every multiple-choice type. */

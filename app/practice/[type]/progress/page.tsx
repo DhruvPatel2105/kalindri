@@ -10,11 +10,12 @@ import { formatDuration } from "@/lib/practice/testState";
 import { loadMastery } from "@/lib/practice/loadMastery";
 import { computeTypeStats, MAX_SESSION_MS } from "@/lib/practice/typeStats";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 
 import { HistoryList } from "../../HistoryList";
 import { Pagination } from "../../Pagination";
-import { TYPE_LABELS } from "../typeLabels";
 import { ScoreTrend } from "../../ScoreTrend";
+import { Stat } from "../../../_components/Stat";
 
 /**
  * One question type's progress dashboard. Full tests and retries are kept
@@ -41,17 +42,20 @@ export default async function TypeProgressPage({
 
   if (!(QUESTION_TYPES as readonly string[]).includes(type)) notFound();
   const questionType = type as QuestionType;
-  const label = TYPE_LABELS[questionType] ?? questionType;
+  const label = QUESTION_TYPE_LABELS[questionType];
 
-  const finished = await loadFinishedSessions(user, questionType);
+  // Independent reads, run together rather than one after another.
+  const [finished, allMastery, history] = await Promise.all([
+    loadFinishedSessions(user, questionType),
+    loadMastery(user.id),
+    getHistoryPage(getDb(), {
+      userId: user.id,
+      requestedPage: parsePageParam(pageParam),
+      type: questionType,
+    }),
+  ]);
   const stats = computeTypeStats(finished);
-  const mastery = (await loadMastery(user.id)).byType.get(questionType) ?? null;
-
-  const history = await getHistoryPage(getDb(), {
-    userId: user.id,
-    requestedPage: parsePageParam(pageParam),
-    type: questionType,
-  });
+  const mastery = allMastery.byType.get(questionType) ?? null;
   const historyItems = await fillHistorySummaries(user, history.items);
   const pageHref = (n: number) =>
     n === 1 ? `/practice/${type}/progress` : `/practice/${type}/progress?page=${n}`;
@@ -276,22 +280,3 @@ function Group({
   );
 }
 
-function Stat({
-  label,
-  value,
-  hint,
-  tone = "text-[#1e2a2a]",
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: string;
-}) {
-  return (
-    <div className="rounded-lg border border-[#ddd9d0] bg-white px-3 py-2.5">
-      <p className="text-xs text-[#7d8a88]">{label}</p>
-      <p className={`mt-0.5 text-lg font-semibold ${tone}`}>{value}</p>
-      {hint ? <p className="mt-0.5 text-[11px] leading-snug text-[#9aa39f]">{hint}</p> : null}
-    </div>
-  );
-}

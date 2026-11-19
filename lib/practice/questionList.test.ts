@@ -46,6 +46,11 @@ describe("paginate (10 per page)", () => {
     expect(paginate(15, 99)).toEqual({ page: 2, totalPages: 2, offset: 10 });
   });
 
+  it("a non-number page is page 1, never NaN", () => {
+    expect(paginate(30, Number.NaN)).toEqual({ page: 1, totalPages: 3, offset: 0 });
+    expect(paginate(30, 2.7)).toEqual({ page: 2, totalPages: 3, offset: 10 });
+  });
+
   it("zero questions is still one (empty) page, never page 0", () => {
     expect(paginate(0, 1)).toEqual({ page: 1, totalPages: 1, offset: 0 });
     expect(paginate(0, 5)).toEqual({ page: 1, totalPages: 1, offset: 0 });

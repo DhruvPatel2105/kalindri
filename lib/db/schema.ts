@@ -33,6 +33,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { sql } from "drizzle-orm";
 
+import { QUESTION_ACCENTS, QUESTION_DIFFICULTIES } from "@/lib/questions/enums";
+
 /* -------------------------------------------------------------------------- */
 /*  Enums                                                                      */
 /* -------------------------------------------------------------------------- */
@@ -76,18 +78,9 @@ export const skill = pgEnum("skill", [
   "writing",
 ]);
 
-export const questionDifficulty = pgEnum("question_difficulty", [
-  "easy",
-  "medium",
-  "hard",
-]);
+export const questionDifficulty = pgEnum("question_difficulty", QUESTION_DIFFICULTIES);
 
-export const questionAccent = pgEnum("question_accent", [
-  "en-CA",
-  "en-GB",
-  "en-US",
-  "en-AU",
-]);
+export const questionAccent = pgEnum("question_accent", QUESTION_ACCENTS);
 
 export const questionStatus = pgEnum("question_status", [
   "draft",
@@ -234,7 +227,10 @@ export const activeSessions = pgTable("active_sessions", {
   geoCity: text("geo_city"),
   createdAt: createdAt(),
   lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
-});
+}, (table) => [
+  // Read on every signed-in request (requireActiveSession).
+  index("active_sessions_user_id_idx").on(table.userId),
+]);
 
 export const sessionEvents = pgTable("session_events", {
   id: pkId(),
@@ -299,7 +295,10 @@ export const questions = pgTable("questions", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => [
+  // Practice lists, set building and library counts filter on these.
+  index("questions_org_type_status_idx").on(table.orgId, table.type, table.status),
+]);
 
 /**
  * An ordered group of questions of ONE type that a student sits as a single
@@ -326,7 +325,9 @@ export const questionSets = pgTable("question_sets", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}, (table) => [
+  index("question_sets_org_type_status_idx").on(table.orgId, table.type, table.status),
+]);
 
 /**
  * A student's bookmark on a question: one colour per (student, question),
@@ -470,6 +471,16 @@ export const sessions = pgTable("sessions", {
 }, (table) => [
   uniqueIndex("sessions_retry_of_session_id_unique").on(table.retryOfSessionId),
   index("sessions_root_session_id_idx").on(table.rootSessionId),
+  // History and dashboards: a student's sessions, newest first.
+  index("sessions_user_started_idx").on(table.userId, table.startedAt),
+  // At most ONE unfinished whole-set session per student, set and mode (one
+  // open test, one open Practice). Stops a double click or a second tab from
+  // starting two; also serves the "resume my open test" lookup.
+  uniqueIndex("sessions_one_open_per_set")
+    .on(table.userId, table.questionSetId, table.mode)
+    .where(
+      sql`${table.status} = 'in_progress' AND ${table.retryOfSessionId} IS NULL AND ${table.questionSetId} IS NOT NULL`,
+    ),
   // A retry has a parent and a full practice has none.
   check(
     "sessions_type_matches_parent",
@@ -532,6 +543,8 @@ export const attempts = pgTable("attempts", {
 }, (table) => [
   // Question mastery reads a student's attempts grouped by question.
   index("attempts_user_question_idx").on(table.userId, table.questionId),
+  // Results, review and scoring read a session's attempts.
+  index("attempts_session_id_idx").on(table.sessionId),
 ]);
 
 export const scores = pgTable("scores", {
@@ -551,7 +564,11 @@ export const scores = pgTable("scores", {
   overrideReason: text("override_reason"),
   scorerVersion: text("scorer_version"),
   createdAt: createdAt(),
-});
+}, (table) => [
+  // One score per trait per attempt: concurrent scoring can't double-record,
+  // and results join scores by attempt.
+  uniqueIndex("scores_attempt_trait_unique").on(table.attemptId, table.trait),
+]);
 
 export const scoreRuns = pgTable("score_runs", {
   id: pkId(),

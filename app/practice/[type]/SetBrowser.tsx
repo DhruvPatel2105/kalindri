@@ -5,18 +5,17 @@ import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { getDb } from "@/lib/db";
 import { getQuestionSetPage } from "@/lib/practice/listQuestionSets";
 import {
-  DIFFICULTY_LABELS,
   describeSetDifficulty,
   difficultyBreakdown,
   parsePageParam,
   questionCountLabel,
-  type Difficulty,
 } from "@/lib/practice/questionList";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
 
+import { DifficultyTag } from "../../_components/DifficultyTag";
 import { Pagination } from "../Pagination";
 import { StartTestControl } from "./StartTestControl";
-import { TYPE_LABELS } from "./typeLabels";
 
 /**
  * Browse page for one question type's sets, used for both ways of working
@@ -52,11 +51,6 @@ const MODES = {
   },
 } as const;
 
-const DIFFICULTY_STYLES: Record<Difficulty, string> = {
-  easy: "bg-[#e3f0ec] text-[#17544f]",
-  medium: "bg-[#f5ecd3] text-[#7a5d14]",
-  hard: "bg-[#f3dcd5] text-[#8a3622]",
-};
 
 export async function SetBrowser({
   type,
@@ -75,7 +69,7 @@ export async function SetBrowser({
     notFound();
   }
   const questionType = type as QuestionType;
-  const label = TYPE_LABELS[questionType] ?? questionType;
+  const label = QUESTION_TYPE_LABELS[questionType];
 
   const { total, pagination, items } = await getQuestionSetPage(getDb(), {
     orgId: user.orgId,
@@ -146,9 +140,7 @@ export async function SetBrowser({
                     {(() => {
                       const d = describeSetDifficulty(item.difficulty, item.difficultyMix);
                       return d.kind === "single" ? (
-                        <span className={`rounded px-2 py-0.5 font-medium ${DIFFICULTY_STYLES[d.difficulty]}`}>
-                          {DIFFICULTY_LABELS[d.difficulty]}
-                        </span>
+                        <DifficultyTag difficulty={d.difficulty} />
                       ) : d.kind === "mixed" ? (
                         <span
                           className="rounded bg-[#eceae4] px-2 py-0.5 font-medium text-[#3d4a48]"
@@ -157,7 +149,7 @@ export async function SetBrowser({
                           Mixed
                         </span>
                       ) : (
-                        <span className="rounded bg-[#eceae4] px-2 py-0.5 font-medium text-[#5c6a68]">Unrated</span>
+                        <DifficultyTag difficulty={null} />
                       );
                     })()}
                     <span className="text-[#5c6a68]">

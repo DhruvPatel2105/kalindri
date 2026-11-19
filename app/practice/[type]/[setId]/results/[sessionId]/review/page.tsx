@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
+import { isUuid } from "@/lib/validation/uuid";
 import {
   getReviewQuestion,
   getTestResults,
@@ -9,8 +10,8 @@ import {
 } from "@/lib/practice/testEngine";
 import { resultKind, type QuestionResultKind } from "@/lib/practice/testResults";
 import { QUESTION_TYPES } from "@/lib/questions/types";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 
-import { TYPE_LABELS } from "../../../../typeLabels";
 import { ReviewQuestion } from "../../../../../ReviewQuestion";
 
 /**
@@ -21,9 +22,6 @@ import { ReviewQuestion } from "../../../../../ReviewQuestion";
  *
  * `?q=` is the 1-based question number.
  */
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 const NAV_TONE: Record<QuestionResultKind | "unmarked", string> = {
   correct: "border-[#1f6f6b] bg-[#1f6f6b] text-white",
   partial: "border-[#b58b2a] bg-[#b58b2a] text-white",
@@ -53,8 +51,8 @@ export default async function ReviewPage({
 
   if (
     !(QUESTION_TYPES as readonly string[]).includes(type) ||
-    !UUID_RE.test(setId) ||
-    !UUID_RE.test(sessionId)
+    !isUuid(setId) ||
+    !isUuid(sessionId)
   ) {
     notFound();
   }
@@ -84,7 +82,7 @@ export default async function ReviewPage({
 
   const base = `/practice/${type}/${setId}/results/${sessionId}`;
   const hrefFor = (n: number) => `${base}/review?q=${n}`;
-  const label = TYPE_LABELS[results.type] ?? results.type;
+  const label = QUESTION_TYPE_LABELS[results.type];
 
   return (
     <div className="min-h-screen bg-[#f4f2ee]">

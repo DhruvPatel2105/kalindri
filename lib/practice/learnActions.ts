@@ -1,19 +1,21 @@
 "use server";
 
 /**
- * The Practice "Answer" button. A public endpoint, so it authenticates and
- * hands the user to learnEngine, which re-checks the set and question. It
- * reveals ONE question's answer per call (the answer is not in the page).
+ * Records a Practice "Answer" press. The answer itself is already on screen —
+ * the page prefetched it — so this runs in the background: it authenticates,
+ * re-checks the set and question, saves the attempt and marks it on the
+ * server (the record of truth). It returns only the server's marking and the
+ * attempt count, never question content.
  */
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
 
 import { answerLearnQuestion } from "./learnEngine";
-import type { QuestionReview } from "./reviewModel";
+import type { QuestionResultKind } from "./testResults";
 
 export type AnswerResult =
-  | { ok: true; review: QuestionReview; attemptNumber: number }
+  | { ok: true; kind: QuestionResultKind; attemptNumber: number }
   | { ok: false; error: string };
 
 export async function answerQuestionAction(input: {
@@ -33,7 +35,7 @@ export async function answerQuestionAction(input: {
       questionId: input.questionId,
       response: input.response,
     });
-    return { ok: true, review, attemptNumber };
+    return { ok: true, kind: review.kind, attemptNumber };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Couldn't check your answer." };
   }

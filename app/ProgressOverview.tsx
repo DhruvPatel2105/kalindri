@@ -7,11 +7,13 @@ import { fillHistorySummaries, loadFinishedSessions } from "@/lib/practice/loadF
 import { loadMastery } from "@/lib/practice/loadMastery";
 import { formatDuration } from "@/lib/practice/testState";
 import { computeAllStats } from "@/lib/practice/typeStats";
+import { PRACTISABLE_TYPES } from "@/lib/questions/practisable";
 import type { QuestionType } from "@/lib/questions/types";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 
 import { HistoryList } from "./practice/HistoryList";
 import { ScoreTrend } from "./practice/ScoreTrend";
-import { TYPE_LABELS } from "./practice/[type]/typeLabels";
+import { Stat } from "./_components/Stat";
 
 type SessionUser = Awaited<ReturnType<typeof requireActiveSession>>;
 
@@ -33,18 +35,17 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
  * score or a CLB estimate.
  */
 export async function ProgressOverview({ user }: { user: SessionUser }) {
-  const finished = await loadFinishedSessions(user);
+  // Independent reads, run together rather than one after another.
+  const [finished, mastery, history] = await Promise.all([
+    loadFinishedSessions(user),
+    loadMastery(user.id),
+    getHistoryPage(getDb(), { userId: user.id, requestedPage: 1 }),
+  ]);
   const { overall, byType } = computeAllStats(finished);
-  const mastery = await loadMastery(user.id);
-
-  const history = await getHistoryPage(getDb(), {
-    userId: user.id,
-    requestedPage: 1,
-  });
   const recent = await fillHistorySummaries(user, history.items.slice(0, RECENT));
 
   // Practised types first (in the dashboard's order), then the rest with a prompt.
-  const types = Object.keys(TYPE_LABELS) as QuestionType[];
+  const types: readonly QuestionType[] = PRACTISABLE_TYPES;
   const practised = types.filter((t) => byType.has(t));
   const notYet = types.filter(
     (t) => !byType.has(t) && t !== "MCS_READING" && t !== "MCM_READING",
@@ -79,11 +80,13 @@ export async function ProgressOverview({ user }: { user: SessionUser }) {
           {/* ── overall performance ── */}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <Stat
+              size="lg"
               label="Full-test accuracy"
               value={pct(overall.full.accuracyPercent)}
               hint={`${overall.full.questions.correct} of ${plural(overall.full.questions.total, "question")} correct across all types; unanswered count as not correct`}
             />
             <Stat
+              size="lg"
               label="Retry accuracy"
               value={pct(overall.retry.accuracyPercent)}
               hint={
@@ -93,6 +96,7 @@ export async function ProgressOverview({ user }: { user: SessionUser }) {
               }
             />
             <Stat
+              size="lg"
               label="Full-test improvement"
               value={
                 improvement
@@ -115,16 +119,19 @@ export async function ProgressOverview({ user }: { user: SessionUser }) {
               }
             />
             <Stat
+              size="lg"
               label="Completed sessions"
               value={String(completedSessions)}
               hint={`${plural(overall.full.sessions, "full test")} · ${plural(overall.retry.sessions, "retry session")}`}
             />
             <Stat
+              size="lg"
               label="Practice time"
               value={overall.practiceSeconds > 0 ? formatDuration(overall.practiceSeconds * 1000) : "—"}
               hint="full tests and retries; approximate, each session capped at 2 hours"
             />
             <Stat
+              size="lg"
               label="Questions practised"
               value={String(overall.questionsPractised)}
               hint={
@@ -178,7 +185,7 @@ export async function ProgressOverview({ user }: { user: SessionUser }) {
                     className="flex flex-col gap-2 border-b border-[#f0ede5] px-6 py-4 last:border-b-0 sm:flex-row sm:items-center sm:gap-6"
                   >
                     <div className="sm:w-56">
-                      <p className="text-sm font-semibold text-[#1e2a2a]">{TYPE_LABELS[type]}</p>
+                      <p className="text-sm font-semibold text-[#1e2a2a]">{QUESTION_TYPE_LABELS[type]}</p>
                       <p className="mt-0.5 text-xs text-[#7d8a88]">
                         {plural(stats.full.sessions, "full test")} · {plural(stats.retry.sessions, "retry session")}
                         {typeMastery?.percent != null ? ` · mastery ${typeMastery.percent}%` : ""}
@@ -214,7 +221,7 @@ export async function ProgressOverview({ user }: { user: SessionUser }) {
                       href={`/practice/${type}/progress`}
                       className="w-fit rounded border border-[#dcd8cf] bg-white px-3 py-1.5 text-xs font-semibold text-[#1e2a2a] hover:border-[#1f6f6b] hover:text-[#1f6f6b]"
                     >
-                      {TYPE_LABELS[type]} dashboard →
+                      {QUESTION_TYPE_LABELS[type]} dashboard →
                     </Link>
                   </li>
                 );
@@ -224,7 +231,7 @@ export async function ProgressOverview({ user }: { user: SessionUser }) {
                   key={type}
                   className="flex items-center justify-between gap-4 border-b border-[#f0ede5] px-6 py-3 text-sm last:border-b-0"
                 >
-                  <span className="text-[#7d8a88]">{TYPE_LABELS[type]} — not practised yet</span>
+                  <span className="text-[#7d8a88]">{QUESTION_TYPE_LABELS[type]} — not practised yet</span>
                   <Link href={`/practice/${type}`} className="text-xs font-semibold text-[#1f6f6b] hover:underline">
                     Practise →
                   </Link>
@@ -249,22 +256,3 @@ export async function ProgressOverview({ user }: { user: SessionUser }) {
   );
 }
 
-function Stat({
-  label,
-  value,
-  hint,
-  tone = "text-[#1e2a2a]",
-}: {
-  label: string;
-  value: string;
-  hint?: string;
-  tone?: string;
-}) {
-  return (
-    <div className="rounded border border-[#ddd9d0] bg-white px-4 py-3">
-      <p className="text-xs text-[#7d8a88]">{label}</p>
-      <p className={`mt-0.5 text-xl font-semibold ${tone}`}>{value}</p>
-      {hint ? <p className="mt-0.5 text-[11px] leading-snug text-[#9aa39f]">{hint}</p> : null}
-    </div>
-  );
-}

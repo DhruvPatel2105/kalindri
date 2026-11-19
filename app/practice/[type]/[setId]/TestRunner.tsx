@@ -9,31 +9,26 @@ import { saveProgress, submitTest } from "@/lib/practice/testActions";
 import { answerStatuses, clampIndex, countAnswered } from "@/lib/practice/testState";
 
 import { BookmarkButton } from "../BookmarkButton";
-import { DropdownBlanksInput } from "./inputs/DropdownBlanksInput";
-import { McmInput } from "./inputs/McmInput";
-import { McsInput } from "./inputs/McsInput";
-import { ReorderInput } from "./inputs/ReorderInput";
-import { WordBankInput } from "./inputs/WordBankInput";
+import { QuestionInput } from "./inputs/QuestionInput";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
-function asString(value: unknown): string {
-  return typeof value === "string" ? value : "";
-}
-function asStrings(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === "string")
-    : [];
-}
+/**
+ * Changes are saved this long after the last one, so a burst of edits
+ * (several drops, a few dropdown picks, flicking through questions) is one
+ * request rather than one per change. Submitting or leaving the page sends
+ * anything still waiting at once.
+ */
+const SAVE_DELAY_MS = 600;
 
 /**
  * Runs a whole question set as one test: question N of M, Previous / Next, a
  * numbered navigation panel showing which questions have an answer, and a
  * Submit Test button that works with questions left blank.
  *
- * Every change is autosaved to the server as it happens (saves are queued so
- * they land in order), so closing the tab loses nothing — the student resumes
- * where they were. Submitting waits for the queue to drain and re-sends any
+ * Every change is autosaved (debounced per question, see SAVE_DELAY_MS, and
+ * queued so saves land in order), so closing the tab loses nothing — the
+ * student resumes where they were. Submitting waits for the queue to drain and re-sends any
  * answer that failed to save, so a flaky connection can't silently drop one.
  * No marks are shown until the test is submitted.
  */
@@ -73,6 +68,11 @@ export function TestRunner({
   const chain = useRef<Promise<void>>(Promise.resolve());
   const pending = useRef(0);
   const failed = useRef(new Set<string>());
+  // Answers changed but not yet sent (the latest value per question).
+  const dirty = useRef(new Map<string, unknown>());
+  // The current question changed since the last save.
+  const positionDirty = useRef(false);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const ids = questions.map((q) => q.id);
   const statuses = answerStatuses(ids, answers);
@@ -109,11 +109,41 @@ export function TestRunner({
     });
   }
 
+  /** Starts (or restarts) the countdown to sending whatever is waiting. */
+  function scheduleFlush() {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(flushDirty, SAVE_DELAY_MS);
+  }
+
+  /**
+   * Sends every answer still waiting (each carries the current position), or
+   * just the position if only that changed. Returns whether anything was sent.
+   */
+  function flushDirty(): boolean {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    if (dirty.current.size === 0 && !positionDirty.current) return false;
+    if (dirty.current.size > 0) {
+      for (const [questionId, response] of dirty.current) {
+        enqueueSave(indexRef.current, { questionId, response });
+      }
+    } else {
+      enqueueSave(indexRef.current);
+    }
+    dirty.current.clear();
+    positionDirty.current = false;
+    return true;
+  }
+
   function handleAnswer(questionId: string, response: unknown) {
     const next = { ...answersRef.current, [questionId]: response };
     answersRef.current = next;
     setAnswers(next);
-    enqueueSave(indexRef.current, { questionId, response });
+    dirty.current.set(questionId, response);
+    setSaveStatus("saving");
+    scheduleFlush();
   }
 
   function goTo(target: number) {
@@ -121,23 +151,35 @@ export function TestRunner({
     if (next === indexRef.current) return;
     indexRef.current = next;
     setIndex(next);
-    enqueueSave(next);
+    // The position is only needed to resume where the student left off, so
+    // it rides along with the next save instead of costing a request per
+    // click: flipping through ten questions is one save, not ten.
+    positionDirty.current = true;
+    scheduleFlush();
   }
 
-  // Warn before closing the tab while a save is still on its way.
+  // Warn before closing the tab while a save is waiting or on its way, and
+  // send anything waiting if the runner is left (e.g. via the navigation bar).
   useEffect(() => {
     function onBeforeUnload(event: BeforeUnloadEvent) {
-      if (pending.current > 0 || failed.current.size > 0) {
+      if (dirty.current.size > 0 || pending.current > 0 || failed.current.size > 0) {
+        flushDirty();
         event.preventDefault();
       }
     }
     window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      flushDirty();
+    };
+    // flushDirty only touches refs, so binding it once is correct.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function handleSubmit() {
     setSubmitting(true);
     setSubmitError(null);
+    flushDirty();
 
     await chain.current;
 
@@ -178,75 +220,6 @@ export function TestRunner({
     }
 
     router.push(resultsHref);
-  }
-
-  function renderQuestion(q: ClientQuestion) {
-    const common = { disabled: submitting };
-    const value = answers[q.id];
-    switch (q.kind) {
-      case "MCS_READING":
-        return (
-          <McsInput
-            key={q.id}
-            {...common}
-            passage={q.passage}
-            questionText={q.questionText}
-            options={q.options}
-            value={asString(value)}
-            onChange={(next) => handleAnswer(q.id, next)}
-          />
-        );
-      case "MCM_READING":
-        return (
-          <McmInput
-            key={q.id}
-            {...common}
-            passage={q.passage}
-            questionText={q.questionText}
-            options={q.options}
-            value={asStrings(value)}
-            onChange={(next) => handleAnswer(q.id, next)}
-          />
-        );
-      case "REORDER_PARAGRAPH":
-        return (
-          <ReorderInput
-            key={q.id}
-            {...common}
-            boxes={q.boxes}
-            value={asStrings(value)}
-            onChange={(next) => handleAnswer(q.id, next)}
-          />
-        );
-      case "FIB_READING":
-        return (
-          <WordBankInput
-            key={q.id}
-            {...common}
-            parts={q.parts}
-            wordBank={q.wordBank}
-            value={asStrings(value)}
-            onChange={(next) => handleAnswer(q.id, next)}
-          />
-        );
-      case "FIB_RW":
-        return (
-          <DropdownBlanksInput
-            key={q.id}
-            {...common}
-            parts={q.parts}
-            blanks={q.blanks}
-            value={asStrings(value)}
-            onChange={(next) => handleAnswer(q.id, next)}
-          />
-        );
-      default:
-        return (
-          <p className="text-sm text-[#5c6a68]">
-            No practice UI is built for this question type yet.
-          </p>
-        );
-    }
   }
 
   return (
@@ -305,7 +278,14 @@ export function TestRunner({
             </span>
           </div>
 
-          {current ? renderQuestion(current) : null}
+          {current ? (
+            <QuestionInput
+              question={current}
+              value={answers[current.id]}
+              onChange={(next) => handleAnswer(current.id, next)}
+              disabled={submitting}
+            />
+          ) : null}
 
           <div className="flex items-center justify-between gap-3 border-t border-[#e6e2d9] pt-5">
             <button

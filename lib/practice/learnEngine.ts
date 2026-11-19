@@ -16,27 +16,32 @@ import "server-only";
  *     with the question frozen as it was (payload, type, version, scoring
  *     rules), exactly like a test attempt; Try Again just allows another.
  *
- * Content protection (CLAUDE.md): a question's answer is revealed only by
- * answerLearnQuestion, one question at a time — it is not in the page the
- * student loads. By explicit product decision, Practice lets the student press
- * Answer whether or not they have tried the question (this differs from the
- * Test rule "no model answers before an attempt"). A reveal without an attempt
- * is saved as an 'abandoned' attempt (no response), so study behaviour stays
- * visible without counting as an answer. That per-question fetch is a
- * deterrent against skimming the page source, not a security boundary —
- * nothing here may be described as protection.
+ * Answers are PREFETCHED (explicit product decision): loadLearnSet sends each
+ * question's answer key with the page, hidden, so pressing Answer displays
+ * the result immediately — the browser builds it with the same review code
+ * the server uses. answerLearnQuestion then records the attempt in the
+ * background. Practice also lets the student press Answer whether or not
+ * they have tried the question (this differs from the Test rule "no model
+ * answers before an attempt"); a reveal without an attempt is saved as an
+ * 'abandoned' attempt (no response), so study behaviour stays visible without
+ * counting as an answer.
+ *
+ * Content protection (CLAUDE.md): because the answers are in the page, a
+ * student who opens the browser's developer tools can read a Practice set's
+ * answers before pressing Answer. That is accepted for Practice, where the
+ * answers are one click away anyway. It must NEVER be done for a Test before
+ * submission. Nothing here may be described as protection.
  */
 
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, sql } from "drizzle-orm";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { getDb } from "@/lib/db";
-import { attempts, questions, questionSets, scores, sessions } from "@/lib/db/schema";
+import { attempts, questionBookmarks, questions, questionSets, scores, sessions } from "@/lib/db/schema";
 import type { QuestionType } from "@/lib/questions/types";
 import { isDeterministicType } from "@/lib/scoring/registry";
 
 import type { BookmarkColor } from "./bookmarkColors";
-import { getBookmarks } from "./bookmarks";
 import { toClientQuestion, type ClientQuestion } from "./clientQuestion";
 import type { Difficulty } from "./questionList";
 import { questionHeader } from "./questionHeader";
@@ -45,7 +50,7 @@ import { buildQuestionReview, type QuestionReview } from "./reviewModel";
 import { scoringRulesFor } from "./scoringRules";
 import { QuestionNotAvailableError, recordAttemptScore } from "./testEngine";
 import { resultKind, type QuestionResultKind } from "./testResults";
-import { isAnswered } from "./testState";
+import { isAnswered, type QuestionSnapshot } from "./testState";
 
 type SessionUser = Awaited<ReturnType<typeof requireActiveSession>>;
 
@@ -64,8 +69,15 @@ export interface LearnQuestion {
   header: string;
   /** The question's own rating, else the set's, else null (shown as "Unrated"). */
   difficulty: Difficulty | null;
-  /** Browser-safe question: no answer key. */
+  /** What the answer input shows: shuffled, no answer key visible in it. */
   client: ClientQuestion;
+  /**
+   * The full question INCLUDING its answer key, prefetched with the page and
+   * kept hidden in the browser so pressing Answer shows the result instantly
+   * (computed in the browser by the same review code the server uses) with
+   * no request to wait for. See the content-protection note at the top.
+   */
+  answerKey: QuestionSnapshot;
   /** How the student's most recent attempt went; null if never attempted. */
   lastKind: QuestionResultKind | null;
   /** How many times they've pressed Answer on this question. */
@@ -81,19 +93,30 @@ export interface LearnSet {
   questions: LearnQuestion[];
 }
 
+/** The only set columns Practice reads (never `select *`). */
+const setColumns = {
+  id: questionSets.id,
+  title: questionSets.title,
+  difficulty: questionSets.difficulty,
+  questionIds: questionSets.questionIds,
+};
+
+/** A set this student may use: their org's, of this type, published and active. */
+function visibleSet(user: SessionUser, type: QuestionType, setId: string) {
+  return and(
+    eq(questionSets.id, setId),
+    eq(questionSets.orgId, user.orgId),
+    eq(questionSets.type, type),
+    eq(questionSets.status, "published"),
+    eq(questionSets.isActive, true),
+  );
+}
+
 async function findPublishedSet(user: SessionUser, type: QuestionType, setId: string) {
   const [set] = await getDb()
-    .select()
+    .select(setColumns)
     .from(questionSets)
-    .where(
-      and(
-        eq(questionSets.id, setId),
-        eq(questionSets.orgId, user.orgId),
-        eq(questionSets.type, type),
-        eq(questionSets.status, "published"),
-        eq(questionSets.isActive, true),
-      ),
-    )
+    .where(visibleSet(user, type, setId))
     .limit(1);
   if (!set) {
     throw new QuestionNotAvailableError(`Question set ${setId} is not an available ${type} set.`);
@@ -125,27 +148,73 @@ export async function loadLearnSet(
   setId: string,
 ): Promise<LearnSet> {
   const db = getDb();
-  const set = await findPublishedSet(user, type, setId);
 
-  // Current versions of the set's questions, published and active only.
-  const rows = await db
-    .select({
-      id: questions.id,
-      type: questions.type,
-      payload: questions.payload,
-      version: questions.version,
-      difficulty: questions.difficulty,
-    })
-    .from(questions)
-    .where(
-      and(
-        inArray(questions.id, set.questionIds),
-        eq(questions.orgId, user.orgId),
-        eq(questions.type, type),
-        eq(questions.status, "published"),
-        eq(questions.isActive, true),
+  // ONE batch of four independent reads, all started together — so opening a
+  // set costs a single database round trip instead of two. The set's question
+  // ids are looked up INSIDE the questions and bookmarks queries (a subquery
+  // on the same visible-set conditions), so they don't have to wait for the
+  // set row to come back first; and the attempts query only needs the set id
+  // from the URL. Authorization is unchanged: if the set isn't visible to
+  // this student the set query finds nothing, we stop with "not available",
+  // and the other results are discarded — and each of them is also
+  // restricted to this student / org / published / active by its own
+  // conditions.
+  const setQuestionIds = sql`(select unnest(${questionSets.questionIds}) from ${questionSets} where ${visibleSet(user, type, setId)})`;
+  const [[set], rows, bookmarkRows, done] = await Promise.all([
+    db.select(setColumns).from(questionSets).where(visibleSet(user, type, setId)).limit(1),
+    db
+      .select({
+        id: questions.id,
+        type: questions.type,
+        payload: questions.payload,
+        version: questions.version,
+        difficulty: questions.difficulty,
+      })
+      .from(questions)
+      .where(
+        and(
+          sql`${questions.id} in ${setQuestionIds}`,
+          eq(questions.orgId, user.orgId),
+          eq(questions.type, type),
+          eq(questions.status, "published"),
+          eq(questions.isActive, true),
+        ),
       ),
-    );
+    db
+      .select({ questionId: questionBookmarks.questionId, color: questionBookmarks.color })
+      .from(questionBookmarks)
+      .where(
+        and(
+          eq(questionBookmarks.userId, user.id),
+          sql`${questionBookmarks.questionId} in ${setQuestionIds}`,
+        ),
+      ),
+    db
+      .select({
+        questionId: attempts.questionId,
+        score: scores.score,
+        maxScore: scores.maxScore,
+      })
+      .from(attempts)
+      .innerJoin(sessions, eq(attempts.sessionId, sessions.id))
+      .leftJoin(scores, eq(scores.attemptId, attempts.id))
+      .where(
+        and(
+          eq(sessions.userId, user.id),
+          eq(sessions.mode, "drill"),
+          eq(sessions.questionSetId, setId),
+          eq(sessions.status, "in_progress"),
+          eq(attempts.status, "submitted"),
+        ),
+      )
+      .orderBy(asc(attempts.submittedAt), asc(attempts.id)),
+  ]);
+
+  if (!set) {
+    throw new QuestionNotAvailableError(`Question set ${setId} is not an available ${type} set.`);
+  }
+  const bookmarks = new Map(bookmarkRows.map((row) => [row.questionId, row.color]));
+
   const byId = new Map(rows.map((row) => [row.id, row]));
   const ordered = set.questionIds.flatMap((id) => {
     const row = byId.get(id);
@@ -155,32 +224,17 @@ export async function loadLearnSet(
     throw new QuestionNotAvailableError(`Question set ${setId} has no published questions.`);
   }
 
-  // What the student has already attempted in their open Practice session.
+  // Attempts so far and how the latest one went, per question.
   const history = new Map<string, { attempts: number; lastKind: QuestionResultKind | null }>();
-  const open = await findOpenLearnSession(user, set.id);
-  if (open) {
-    const done = await db
-      .select({
-        questionId: attempts.questionId,
-        score: scores.score,
-        maxScore: scores.maxScore,
-      })
-      .from(attempts)
-      .leftJoin(scores, eq(scores.attemptId, attempts.id))
-      .where(and(eq(attempts.sessionId, open.id), eq(attempts.status, "submitted")))
-      .orderBy(asc(attempts.submittedAt), asc(attempts.id));
-    for (const row of done) {
-      const kind = resultKind({
-        answered: true,
-        score: row.score !== null ? Number(row.score) : null,
-        maxScore: row.maxScore !== null ? Number(row.maxScore) : null,
-      });
-      const previous = history.get(row.questionId);
-      history.set(row.questionId, { attempts: (previous?.attempts ?? 0) + 1, lastKind: kind });
-    }
+  for (const row of done) {
+    const kind = resultKind({
+      answered: true,
+      score: row.score !== null ? Number(row.score) : null,
+      maxScore: row.maxScore !== null ? Number(row.maxScore) : null,
+    });
+    const previous = history.get(row.questionId);
+    history.set(row.questionId, { attempts: (previous?.attempts ?? 0) + 1, lastKind: kind });
   }
-
-  const bookmarks = await getBookmarks(user, ordered.map((row) => row.id));
 
   return {
     setId: set.id,
@@ -195,6 +249,7 @@ export async function loadLearnSet(
         header: questionHeader(client),
         difficulty: row.difficulty ?? set.difficulty ?? null,
         client,
+        answerKey: { id: row.id, type: row.type, payload: row.payload, version: row.version },
         lastKind: seen?.lastKind ?? null,
         attempts: seen?.attempts ?? 0,
         bookmark: bookmarks.get(row.id) ?? null,
@@ -214,29 +269,34 @@ export async function answerLearnQuestion(
   input: { type: QuestionType; setId: string; questionId: string; response: unknown },
 ): Promise<{ review: QuestionReview; attemptNumber: number }> {
   const db = getDb();
-  const set = await findPublishedSet(user, input.type, input.setId);
+
+  // The set, the question and any open Practice session don't depend on each
+  // other: read them together.
+  const [set, [question], openSession] = await Promise.all([
+    findPublishedSet(user, input.type, input.setId),
+    db
+      .select({
+        id: questions.id,
+        type: questions.type,
+        payload: questions.payload,
+        version: questions.version,
+      })
+      .from(questions)
+      .where(
+        and(
+          eq(questions.id, input.questionId),
+          eq(questions.orgId, user.orgId),
+          eq(questions.type, input.type),
+          eq(questions.status, "published"),
+          eq(questions.isActive, true),
+        ),
+      )
+      .limit(1),
+    findOpenLearnSession(user, input.setId),
+  ]);
   if (!set.questionIds.includes(input.questionId)) {
     throw new LearnError("That question isn't in this set.");
   }
-
-  const [question] = await db
-    .select({
-      id: questions.id,
-      type: questions.type,
-      payload: questions.payload,
-      version: questions.version,
-    })
-    .from(questions)
-    .where(
-      and(
-        eq(questions.id, input.questionId),
-        eq(questions.orgId, user.orgId),
-        eq(questions.type, input.type),
-        eq(questions.status, "published"),
-        eq(questions.isActive, true),
-      ),
-    )
-    .limit(1);
   if (!question) throw new QuestionNotAvailableError("That question is no longer available.");
 
   if (!isDeterministicType(question.type)) {
@@ -247,7 +307,7 @@ export async function answerLearnQuestion(
   const answered = isAnswered(validation.data);
 
   // One open Practice session per student per set, created on the first Answer.
-  let session = await findOpenLearnSession(user, set.id);
+  let session = openSession;
   if (!session) {
     [session] = await db
       .insert(sessions)
@@ -260,7 +320,11 @@ export async function answerLearnQuestion(
         isTimed: false,
         isScoredForAnalytics: false,
       })
+      // One open Practice session per student per set (unique index): if
+      // another tab created it a moment ago, use that one.
+      .onConflictDoNothing()
       .returning();
+    session ??= await findOpenLearnSession(user, set.id);
   }
   if (!session) throw new Error("Failed to start the Practice session.");
 

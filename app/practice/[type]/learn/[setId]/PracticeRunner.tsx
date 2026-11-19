@@ -1,30 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useTransition } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import type { LearnQuestion } from "@/lib/practice/learnEngine";
 import { setBookmarkAction } from "@/lib/practice/bookmarkActions";
 import type { BookmarkColor } from "@/lib/practice/bookmarkColors";
 import { answerQuestionAction } from "@/lib/practice/learnActions";
+import { buildQuestionReview } from "@/lib/practice/reviewModel";
 import type { QuestionReview } from "@/lib/practice/reviewModel";
 import type { QuestionResultKind } from "@/lib/practice/testResults";
-import { DIFFICULTY_LABELS, type Difficulty } from "@/lib/practice/questionList";
 
+
+import { DifficultyTag } from "../../../../_components/DifficultyTag";
 import { ReviewQuestion } from "../../../ReviewQuestion";
 import { BookmarkButton } from "../../BookmarkButton";
 import { QuestionListDrawer } from "./QuestionListDrawer";
-import { DropdownBlanksInput } from "../../[setId]/inputs/DropdownBlanksInput";
-import { McmInput } from "../../[setId]/inputs/McmInput";
-import { McsInput } from "../../[setId]/inputs/McsInput";
-import { ReorderInput } from "../../[setId]/inputs/ReorderInput";
-import { WordBankInput } from "../../[setId]/inputs/WordBankInput";
+import { QuestionInput } from "../../[setId]/inputs/QuestionInput";
 
-const DIFFICULTY_STYLES: Record<Difficulty, string> = {
-  easy: "bg-[#e3f0ec] text-[#17544f]",
-  medium: "bg-[#f5ecd3] text-[#7a5d14]",
-  hard: "bg-[#f3dcd5] text-[#8a3622]",
-};
 const STATUS: Record<QuestionResultKind | "none", { label: string; tone: string }> = {
   none: { label: "Not attempted", tone: "bg-[#eceae4] text-[#5c6a68]" },
   correct: { label: "Correct", tone: "bg-[#eaf2f1] text-[#17544f]" },
@@ -33,9 +26,6 @@ const STATUS: Record<QuestionResultKind | "none", { label: string; tone: string 
   unanswered: { label: "Not attempted", tone: "bg-[#eceae4] text-[#5c6a68]" },
 };
 
-const asString = (v: unknown) => (typeof v === "string" ? v : "");
-const asStrings = (v: unknown) =>
-  Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
 
 /**
  * Practice: ONE question per page. Next loads the next question, Previous goes
@@ -73,36 +63,40 @@ export function PracticeRunner({
     () => Object.fromEntries(questions.map((q) => [q.id, q.bookmark])),
   );
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [, startTransition] = useTransition();
 
   const attempted = questions.filter((q) => lastKinds[q.id] != null).length;
   const correct = questions.filter((q) => lastKinds[q.id] === "correct").length;
 
+  /**
+   * Shows the answer at once from the prefetched answer key — no request to
+   * wait for — then records the attempt on the server in the background. If
+   * saving fails the answer stays on screen and a small note says the attempt
+   * wasn't saved.
+   */
   function handleAnswer(q: LearnQuestion) {
+    const response = responses[q.id];
+    const review = buildQuestionReview(q.answerKey, response);
+    setReviews((prev) => ({ ...prev, [q.id]: review }));
+    setLastKinds((prev) => ({ ...prev, [q.id]: review.kind }));
+    if (review.answered) {
+      setAttemptCounts((prev) => ({ ...prev, [q.id]: (prev[q.id] ?? 0) + 1 }));
+    }
     setErrors((prev) => ({ ...prev, [q.id]: undefined }));
-    setPendingId(q.id);
-    startTransition(async () => {
-      try {
-        const result = await answerQuestionAction({
-          type,
-          setId,
-          questionId: q.id,
-          response: responses[q.id],
-        });
-        if (!result.ok) {
-          setErrors((prev) => ({ ...prev, [q.id]: result.error }));
-          return;
-        }
-        setReviews((prev) => ({ ...prev, [q.id]: result.review }));
-        setLastKinds((prev) => ({ ...prev, [q.id]: result.review.kind }));
+
+    void answerQuestionAction({ type, setId, questionId: q.id, response })
+      .then((result) => {
+        if (!result.ok) throw new Error(result.error);
+        // The server's own marking and count are the record; they match the
+        // instant result, but take them as final.
+        setLastKinds((prev) => ({ ...prev, [q.id]: result.kind }));
         setAttemptCounts((prev) => ({ ...prev, [q.id]: result.attemptNumber }));
-      } catch {
-        setErrors((prev) => ({ ...prev, [q.id]: "Couldn't reach the server. Try again." }));
-      } finally {
-        setPendingId(null);
-      }
-    });
+      })
+      .catch(() => {
+        setErrors((prev) => ({
+          ...prev,
+          [q.id]: "Your answer is shown, but this attempt couldn't be saved to your history.",
+        }));
+      });
   }
 
   /** Clears the answer and the revealed result so the question can be attempted again. */
@@ -133,54 +127,32 @@ export function PracticeRunner({
     }
   }
 
-  function go(target: number) {
-    const next = Math.min(Math.max(0, target), questions.length - 1);
-    setIndex(next);
-    // A new question starts at the top of the page.
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }
+  // Stable across renders so the (memoised) question drawer doesn't re-render
+  // every time an answer changes.
+  const go = useCallback(
+    (target: number) => {
+      const next = Math.min(Math.max(0, target), questions.length - 1);
+      setIndex(next);
+      // A new question starts at the top of the page.
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    },
+    [questions.length],
+  );
 
-  function renderInput(q: LearnQuestion) {
-    const c = q.client;
-    const value = responses[q.id];
-    const onChange = (next: unknown) => setResponses((prev) => ({ ...prev, [q.id]: next }));
-    switch (c.kind) {
-      case "MCS_READING":
-        return (
-          <McsInput
-            key={q.id}
-            passage={c.passage}
-            questionText={c.questionText}
-            options={c.options}
-            value={asString(value)}
-            onChange={onChange}
-          />
-        );
-      case "MCM_READING":
-        return (
-          <McmInput
-            key={q.id}
-            passage={c.passage}
-            questionText={c.questionText}
-            options={c.options}
-            value={asStrings(value)}
-            onChange={onChange}
-          />
-        );
-      case "REORDER_PARAGRAPH":
-        return <ReorderInput key={q.id} boxes={c.boxes} value={asStrings(value)} onChange={onChange} />;
-      case "FIB_READING":
-        return (
-          <WordBankInput key={q.id} parts={c.parts} wordBank={c.wordBank} value={asStrings(value)} onChange={onChange} />
-        );
-      case "FIB_RW":
-        return (
-          <DropdownBlanksInput key={q.id} parts={c.parts} blanks={c.blanks} value={asStrings(value)} onChange={onChange} />
-        );
-      default:
-        return <p className="text-sm text-[#5c6a68]">No Practice UI is built for this question type yet.</p>;
-    }
-  }
+
+  // What the drawer lists; rebuilt only when a result or bookmark changes,
+  // not on every keystroke or selection in an answer.
+  const drawerQuestions = useMemo(
+    () =>
+      questions.map((q) => ({
+        number: q.number,
+        header: q.header,
+        difficulty: q.difficulty,
+        kind: reviews[q.id]?.kind ?? lastKinds[q.id] ?? null,
+        bookmark: bookmarks[q.id] ?? null,
+      })),
+    [questions, reviews, lastKinds, bookmarks],
+  );
 
   const current = questions[index];
   const review = current ? reviews[current.id] : undefined;
@@ -221,13 +193,7 @@ export function PracticeRunner({
               <span className="text-sm font-semibold uppercase tracking-wide text-[#5c6a68]">
                 Question {current.number} of {questions.length}
               </span>
-              {current.difficulty ? (
-                <span className={`rounded px-2 py-0.5 font-medium ${DIFFICULTY_STYLES[current.difficulty]}`}>
-                  {DIFFICULTY_LABELS[current.difficulty]}
-                </span>
-              ) : (
-                <span className="rounded bg-[#eceae4] px-2 py-0.5 font-medium text-[#5c6a68]">Unrated</span>
-              )}
+              <DifficultyTag difficulty={current.difficulty} />
               <span className={`rounded px-2 py-0.5 font-medium ${status.tone}`}>{status.label}</span>
               {attemptsSoFar > 0 ? (
                 <span className="text-[#7d8a88]">
@@ -245,7 +211,15 @@ export function PracticeRunner({
             </div>
 
             <div className="rounded-lg border border-[#ddd9d0] bg-white px-4 py-5">
-              {review ? <ReviewQuestion review={review} mode="practice" /> : renderInput(current)}
+              {review ? (
+                <ReviewQuestion review={review} mode="practice" />
+              ) : (
+                <QuestionInput
+                  question={current.client}
+                  value={responses[current.id]}
+                  onChange={(next) => setResponses((prev) => ({ ...prev, [current.id]: next }))}
+                />
+              )}
             </div>
 
             {errors[current.id] ? (
@@ -267,10 +241,9 @@ export function PracticeRunner({
                 <button
                   type="button"
                   onClick={() => handleAnswer(current)}
-                  disabled={pendingId !== null}
                   className="rounded bg-[#1f6f6b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#17544f] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {pendingId === current.id ? "Checking…" : "Answer"}
+                  Answer
                 </button>
               )}
             </div>
@@ -311,13 +284,7 @@ export function PracticeRunner({
       <QuestionListDrawer
         currentIndex={index}
         onSelect={go}
-        questions={questions.map((q) => ({
-          number: q.number,
-          header: q.header,
-          difficulty: q.difficulty,
-          kind: reviews[q.id]?.kind ?? lastKinds[q.id] ?? null,
-          bookmark: bookmarks[q.id] ?? null,
-        }))}
+        questions={drawerQuestions}
       />
     </div>
   );

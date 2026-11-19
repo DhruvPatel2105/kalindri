@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Suspense } from "react";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { getDb } from "@/lib/db";
@@ -9,6 +10,7 @@ import { loadWeights } from "@/lib/scoring/loadWeights";
 import { weightSummary, SCORE_WEIGHT_DISCLOSURE } from "@/lib/scoring/derivedWeights";
 
 import { AppNav } from "./_components/AppNav";
+import { ProgressSkeleton } from "./_components/Skeleton";
 import { WeightsTable } from "./_components/WeightsTable";
 import { ProgressOverview } from "./ProgressOverview";
 
@@ -96,8 +98,10 @@ const SKILL_NOTES = [
 export default async function HomePage() {
   const appUser = await requireActiveSession();
 
-  const counts = await getLibraryCounts(getDb(), appUser.orgId);
-  const { rows: weightRows, methodNote } = await loadWeights(appUser.orgId);
+  const [counts, { rows: weightRows, methodNote }] = await Promise.all([
+    getLibraryCounts(getDb(), appUser.orgId),
+    loadWeights(appUser.orgId),
+  ]);
   const cards: TypeCard[] = [
     ...READING_TYPES,
     ...MULTIPLE_CHOICE_TYPES.filter((qt) => (counts.get(qt.type)?.sets ?? 0) > 0),
@@ -141,7 +145,10 @@ export default async function HomePage() {
         </div>
 
         {/* ── your progress (saved practice sessions) ── */}
-        <ProgressOverview user={appUser} />
+        {/* Streams in: the rest of the page doesn't wait for the progress figures. */}
+        <Suspense fallback={<ProgressSkeleton />}>
+          <ProgressOverview user={appUser} />
+        </Suspense>
 
         {/* ── skill status strip ── */}
         <div className="mb-8 grid grid-cols-2 gap-3 sm:grid-cols-4">

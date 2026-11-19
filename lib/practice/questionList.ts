@@ -89,7 +89,8 @@ export function paginate(
   pageSize: number = PAGE_SIZE,
 ): Pagination {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
-  const page = Math.min(Math.max(1, requestedPage), totalPages);
+  const requested = Number.isFinite(requestedPage) ? Math.floor(requestedPage) : 1;
+  const page = Math.min(Math.max(1, requested), totalPages);
   return { page, totalPages, offset: (page - 1) * pageSize };
 }
 

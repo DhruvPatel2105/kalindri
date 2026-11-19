@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
+import { isUuid } from "@/lib/validation/uuid";
 import { toClientQuestion } from "@/lib/practice/clientQuestion";
 import { parseCountParam } from "@/lib/practice/questionCount";
 import {
@@ -9,8 +10,8 @@ import {
   type ActiveTest,
 } from "@/lib/practice/testEngine";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 
-import { TYPE_LABELS } from "../typeLabels";
 import { TestRunner } from "./TestRunner";
 
 /**
@@ -31,9 +32,6 @@ import { TestRunner } from "./TestRunner";
  * the student's own session, and toClientQuestion strips every answer key
  * before they reach the browser.
  */
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export default async function PracticeTestPage({
   params,
   searchParams,
@@ -48,7 +46,7 @@ export default async function PracticeTestPage({
 
   if (
     !(QUESTION_TYPES as readonly string[]).includes(type) ||
-    !UUID_RE.test(setId)
+    !isUuid(setId)
   ) {
     notFound();
   }
@@ -67,7 +65,7 @@ export default async function PracticeTestPage({
     <TestRunner
       sessionId={test.sessionId}
       title={test.setTitle}
-      typeLabel={TYPE_LABELS[test.type] ?? test.type}
+      typeLabel={QUESTION_TYPE_LABELS[test.type]}
       listHref={`/practice/${type}/tests`}
       resultsHref={`/practice/${type}/${setId}/results/${test.sessionId}`}
       initialIndex={test.currentIndex}

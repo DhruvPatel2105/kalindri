@@ -15,10 +15,10 @@ import type * as schema from "@/lib/db/schema";
 import { questions, questionSets, sessions } from "@/lib/db/schema";
 import type { QuestionType } from "@/lib/questions/types";
 
+import { fetchPage } from "./fetchPage";
 import {
   countDifficulties,
   PAGE_SIZE,
-  paginate,
   type Difficulty,
   type DifficultyMix,
   type Pagination,
@@ -61,63 +61,64 @@ export async function getQuestionSetPage(
     eq(questionSets.isActive, true),
   );
 
-  const [totalRow] = await db
-    .select({ value: count() })
-    .from(questionSets)
-    .where(where);
-  const total = Number(totalRow?.value ?? 0);
+  const { total, pagination, rows } = await fetchPage(
+    params.requestedPage,
+    PAGE_SIZE,
+    async () => {
+      const [row] = await db.select({ value: count() }).from(questionSets).where(where);
+      return Number(row?.value ?? 0);
+    },
+    (offset) =>
+      db
+        .select({
+          id: questionSets.id,
+          title: questionSets.title,
+          difficulty: questionSets.difficulty,
+          questionIds: questionSets.questionIds,
+          questionCount: sql<number>`coalesce(cardinality(${questionSets.questionIds}), 0)`,
+        })
+        .from(questionSets)
+        .where(where)
+        // Oldest first, id as a tiebreaker so pages never overlap or skip rows.
+        .orderBy(asc(questionSets.createdAt), asc(questionSets.id))
+        .limit(PAGE_SIZE)
+        .offset(offset),
+  );
 
-  const pagination = paginate(total, params.requestedPage, PAGE_SIZE);
-
-  const rows = await db
-    .select({
-      id: questionSets.id,
-      title: questionSets.title,
-      difficulty: questionSets.difficulty,
-      questionIds: questionSets.questionIds,
-      questionCount: sql<number>`coalesce(cardinality(${questionSets.questionIds}), 0)`,
-    })
-    .from(questionSets)
-    .where(where)
-    // Oldest first, id as a tiebreaker so pages never overlap or skip rows.
-    .orderBy(asc(questionSets.createdAt), asc(questionSets.id))
-    .limit(PAGE_SIZE)
-    .offset(pagination.offset);
-
-  // The difficulty rating of each of this page's questions (the rating only —
-  // never the payload), to describe each set as easy / medium / hard / mixed.
-  const ratingById = new Map<string, Difficulty | null>();
+  // Two independent lookups for THIS page's sets, run together:
+  //  - each question's difficulty rating (the rating only — never the
+  //    payload), to describe each set as easy / medium / hard / mixed;
+  //  - which sets the student has a test of in progress.
   const allIds = [...new Set(rows.flatMap((row) => row.questionIds))];
-  if (allIds.length > 0) {
-    const ratings = await db
-      .select({ id: questions.id, difficulty: questions.difficulty })
-      .from(questions)
-      .where(inArray(questions.id, allIds));
-    for (const r of ratings) ratingById.set(r.id, r.difficulty);
-  }
-
-  // Which of THIS page's sets the student has half-finished.
-  const openSetIds = new Set<string>();
-  if (rows.length > 0) {
-    const open = await db
-      .select({ setId: sessions.questionSetId })
-      .from(sessions)
-      .where(
-        and(
-          eq(sessions.userId, params.userId),
-          // Tests only: a Practice (learn) session is never "Continue" on a test.
-          eq(sessions.mode, "practice"),
-          eq(sessions.status, "in_progress"),
-          // Only whole-set attempts; a retry in progress isn't "Continue" on the set.
-          isNull(sessions.retryOfSessionId),
-          inArray(
-            sessions.questionSetId,
-            rows.map((row) => row.id),
-          ),
-        ),
-      );
-    for (const row of open) if (row.setId) openSetIds.add(row.setId);
-  }
+  const [ratings, open] = await Promise.all([
+    allIds.length > 0
+      ? db
+          .select({ id: questions.id, difficulty: questions.difficulty })
+          .from(questions)
+          .where(inArray(questions.id, allIds))
+      : Promise.resolve([]),
+    rows.length > 0
+      ? db
+          .select({ setId: sessions.questionSetId })
+          .from(sessions)
+          .where(
+            and(
+              eq(sessions.userId, params.userId),
+              // Tests only: a Practice (learn) session is never "Continue" on a test.
+              eq(sessions.mode, "practice"),
+              eq(sessions.status, "in_progress"),
+              // Only whole-set attempts; a retry in progress isn't "Continue" on the set.
+              isNull(sessions.retryOfSessionId),
+              inArray(
+                sessions.questionSetId,
+                rows.map((row) => row.id),
+              ),
+            ),
+          )
+      : Promise.resolve([]),
+  ]);
+  const ratingById = new Map<string, Difficulty | null>(ratings.map((r) => [r.id, r.difficulty]));
+  const openSetIds = new Set(open.flatMap((row) => (row.setId ? [row.setId] : [])));
 
   return {
     total,

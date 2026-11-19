@@ -11,6 +11,12 @@ const serverSchema = z.object({
     .enum(["development", "test", "production"])
     .default("development"),
   DATABASE_URL: z.string().url(),
+  /**
+   * Prepared statements: "auto" (default) turns them on unless DATABASE_URL
+   * is the transaction pooler (port 6543), "false" forces them off. See
+   * lib/db/index.ts before ever setting "true".
+   */
+  DATABASE_PREPARE: z.enum(["auto", "true", "false"]).default("auto"),
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
 });
 

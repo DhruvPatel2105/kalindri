@@ -6,20 +6,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { logout } from "@/lib/auth/actions";
 import { NAV_SECTIONS } from "@/lib/questions/navigation";
-import type { QuestionType } from "@/lib/questions/types";
-
-/** Question types that can be practised today; the rest are greyed out. */
-const LIVE_TYPES: readonly QuestionType[] = [
-  "REORDER_PARAGRAPH",
-  "FIB_RW",
-  "FIB_READING",
-  "MCS_READING",
-  "MCM_READING",
-];
-
-function isLive(type: QuestionType): boolean {
-  return LIVE_TYPES.includes(type);
-}
+import { isPractisable } from "@/lib/questions/practisable";
 
 /**
  * The navigation bar. "Practice" opens a menu of the question types in four
@@ -76,7 +63,7 @@ export function NavBar({ email, isAdmin }: { email: string; isAdmin: boolean }) 
             <ul className="mt-1">
               {section.items.map((item) => (
                 <li key={item.label}>
-                  {item.type && isLive(item.type) ? (
+                  {item.type && isPractisable(item.type) ? (
                     <Link
                       href={`/practice/${item.type}`}
                       className="block rounded px-1 py-2 text-sm text-[#1e2a2a] hover:bg-[#f4f2ee] hover:text-[#1f6f6b]"

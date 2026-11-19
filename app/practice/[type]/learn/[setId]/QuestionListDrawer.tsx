@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 
 import type { BookmarkColor } from "@/lib/practice/bookmarkColors";
 import {
@@ -40,7 +40,7 @@ const KIND_LABEL: Partial<Record<QuestionResultKind, { text: string; tone: strin
  * every question in the set — number, header, difficulty, whether you've done
  * it and how it went, and its bookmark — 10 per page. Picking one jumps to it.
  */
-export function QuestionListDrawer({
+export const QuestionListDrawer = memo(function QuestionListDrawer({
   questions,
   currentIndex,
   onSelect,
@@ -192,4 +192,4 @@ export function QuestionListDrawer({
       ) : null}
     </>
   );
-}
+});

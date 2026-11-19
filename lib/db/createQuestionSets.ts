@@ -32,25 +32,15 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { parseSetSize, planSets } from "@/lib/practice/buildSets";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
+import { PRACTISABLE_TYPES } from "@/lib/questions/practisable";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
 
 import { organizations, questions, questionSets } from "./schema";
 
 const ORG_SLUG = "kalindri"; // must match lib/db/seed.ts's ORG_SLUG
-const SETTABLE: readonly QuestionType[] = [
-  "REORDER_PARAGRAPH",
-  "FIB_READING",
-  "FIB_RW",
-  "MCS_READING",
-  "MCM_READING",
-];
-const LABELS: Partial<Record<QuestionType, string>> = {
-  REORDER_PARAGRAPH: "Reorder Paragraph",
-  FIB_RW: "R&W Fill in the Blanks",
-  FIB_READING: "Reading Fill in the Blanks",
-  MCS_READING: "Multiple Choice (Single)",
-  MCM_READING: "Multiple Choice (Multiple)",
-};
+const SETTABLE: readonly QuestionType[] = PRACTISABLE_TYPES;
+
 const DIFFICULTIES = ["easy", "medium", "hard"] as const;
 
 async function main(): Promise<void> {
@@ -119,7 +109,7 @@ async function main(): Promise<void> {
       fullSetsOnly: values["full-sets-only"],
     });
 
-    const label = LABELS[type] ?? type;
+    const label = QUESTION_TYPE_LABELS[type];
     console.log(
       `${type}: ${candidates.length} published question(s), ${grouped.size} already in a set, ${ungrouped.length} to group.`,
     );

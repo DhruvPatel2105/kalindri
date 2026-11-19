@@ -2,9 +2,9 @@ import Link from "next/link";
 
 import type { HistoryItem } from "@/lib/practice/listHistory";
 import { formatDuration } from "@/lib/practice/testState";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 
 import { LocalTime } from "./LocalTime";
-import { TYPE_LABELS } from "./[type]/typeLabels";
 
 /**
  * Rows of saved practice sessions: title, type, date, size, time taken and
@@ -33,7 +33,7 @@ export function HistoryList({ items }: { items: HistoryItem[] }) {
                 {item.setTitle}
               </p>
               <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-[#5c6a68]">
-                <span>{TYPE_LABELS[item.type] ?? item.type}</span>
+                <span>{QUESTION_TYPE_LABELS[item.type]}</span>
                 <span aria-hidden="true">·</span>
                 <LocalTime iso={item.startedAt.toISOString()} />
                 <span aria-hidden="true">·</span>

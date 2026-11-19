@@ -166,6 +166,13 @@ starts at 1 and a database trigger adds 1 whenever `payload` changes, so each at
 version it was taken against. Retrying re-reads the CURRENT question, as a new session with its own
 snapshot.
 
+**Indexes and duplicate guards** (migration 0009). Lookups: `active_sessions(user_id)` (every request),
+`attempts(session_id)`, `sessions(user_id, started_at)`, `questions(org_id, type, status)`,
+`question_sets(org_id, type, status)`. Guards: `scores(attempt_id, trait)` is unique (concurrent scoring
+can't double-record a mark) and `sessions_one_open_per_set` allows one unfinished whole-set session per
+(user, set, mode) — one open test and one open Practice — so a double click or a second tab resumes
+the same session instead of creating another. Writers insert with ON CONFLICT DO NOTHING and re-read.
+
 **Performance calculations** (practice dashboards). Only `completed` sessions count. Every percentage
 goes through one helper (`percentOf`: rounded, `null` — never NaN — for an empty denominator) and is
 **weighted**: it is built from summed counts (total correct ÷ total questions), never by averaging

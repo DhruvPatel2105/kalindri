@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
+import { isUuid } from "@/lib/validation/uuid";
 import { loadLearnSet } from "@/lib/practice/learnEngine";
 import { QuestionNotAvailableError } from "@/lib/practice/testEngine";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
+import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 
-import { TYPE_LABELS } from "../../typeLabels";
 import { PracticeRunner } from "./PracticeRunner";
 
 /**
@@ -14,9 +15,6 @@ import { PracticeRunner } from "./PracticeRunner";
  * fetched only when the student presses Answer on it (see learnActions.ts).
  * Practice is tracked separately from Test.
  */
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export default async function PracticeSetPage({
   params,
 }: {
@@ -25,7 +23,7 @@ export default async function PracticeSetPage({
   const { type, setId } = await params;
   const user = await requireActiveSession();
 
-  if (!(QUESTION_TYPES as readonly string[]).includes(type) || !UUID_RE.test(setId)) {
+  if (!(QUESTION_TYPES as readonly string[]).includes(type) || !isUuid(setId)) {
     notFound();
   }
 
@@ -42,7 +40,7 @@ export default async function PracticeSetPage({
       type={type}
       setId={set.setId}
       title={set.title}
-      typeLabel={TYPE_LABELS[set.type] ?? set.type}
+      typeLabel={QUESTION_TYPE_LABELS[set.type]}
       listHref={`/practice/${type}/learn/sets`}
       questions={set.questions}
     />

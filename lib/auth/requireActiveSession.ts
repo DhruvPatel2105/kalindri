@@ -8,8 +8,8 @@ import "server-only";
  * once there's more than one protected route, this check should move into a
  * shared layout instead of being repeated per page.
  *
- * middleware.ts (unchanged from session 6, Edge runtime, no DB access) only
- * confirms a Supabase session exists. This adds the app-level "is this
+ * middleware.ts (Edge runtime, no DB access) only confirms a valid Supabase
+ * login token exists. This adds the app-level "is this
  * browser's session still the CURRENT one for this user" check on top,
  * backed by `active_sessions` — which is exactly why it can't live in
  * middleware: the `postgres` driver needs Node's `net`/`tls`, unavailable on
@@ -31,23 +31,27 @@ import { SESSION_TOKEN_COOKIE } from "./sessionToken";
 
 async function requireActiveSessionOnce() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims verifies the login token's signature locally against the
+  // project's published signing key (cached across requests), instead of
+  // asking Supabase Auth over the network on every page as getUser() does.
+  // Deactivation and "signed in elsewhere" are still enforced below, from
+  // our own tables, on every request.
+  const { data } = await supabase.auth.getClaims();
+  const userId = data?.claims?.sub;
 
-  if (!user) {
+  if (!userId) {
     redirect("/login");
   }
 
   const cookieStore = await cookies();
   const cookieToken = cookieStore.get(SESSION_TOKEN_COOKIE)?.value;
 
+  // The two lookups only need the user id, so they run together.
   const db = getDb();
-  const [session] = await db
-    .select()
-    .from(activeSessions)
-    .where(eq(activeSessions.userId, user.id))
-    .limit(1);
+  const [[session], [appUser]] = await Promise.all([
+    db.select().from(activeSessions).where(eq(activeSessions.userId, userId)).limit(1),
+    db.select().from(users).where(eq(users.id, userId)).limit(1),
+  ]);
 
   if (!session || !sessionMatches(cookieToken, session.sessionToken)) {
     // Superseded elsewhere (or no session cookie/row at all). A Server
@@ -59,21 +63,15 @@ async function requireActiveSessionOnce() {
     redirect("/auth/signed-out");
   }
 
+  if (!appUser || !appUser.isActive) {
+    redirect("/login");
+  }
+
   if (shouldRefreshLastSeen(session.lastSeenAt, new Date())) {
     await db
       .update(activeSessions)
       .set({ lastSeenAt: new Date() })
-      .where(eq(activeSessions.userId, user.id));
-  }
-
-  const [appUser] = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, user.id))
-    .limit(1);
-
-  if (!appUser || !appUser.isActive) {
-    redirect("/login");
+      .where(eq(activeSessions.userId, userId));
   }
 
   return appUser;

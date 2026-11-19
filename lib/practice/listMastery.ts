@@ -1,10 +1,13 @@
 /**
- * The attempts mastery is computed from (lib/practice/mastery.ts): answered
- * and marked attempts in COMPLETED practice sessions, full or retry. Never
- * question content. Takes `db` as a parameter so it stays a plain module.
+ * The attempts mastery is computed from (lib/practice/mastery.ts): for each
+ * question, the student's LATEST answered and marked attempt in a COMPLETED
+ * practice session, full or retry. Postgres keeps only that one row per
+ * question (DISTINCT ON), so this returns one row per unique question rather
+ * than every attempt the student has ever made. Never question content.
+ * Takes `db` as a parameter so it stays a plain module.
  */
 
-import { and, eq, isNotNull } from "drizzle-orm";
+import { and, desc, eq, isNotNull } from "drizzle-orm";
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js";
 
 import type * as schema from "@/lib/db/schema";
@@ -19,7 +22,7 @@ export async function getMasteryAttempts(
   params: { userId: string },
 ): Promise<MasteryAttempt[]> {
   const rows = await db
-    .select({
+    .selectDistinctOn([attempts.questionId], {
       questionId: attempts.questionId,
       type: attempts.questionType,
       isCorrect: attempts.isCorrect,
@@ -38,7 +41,9 @@ export async function getMasteryAttempts(
         eq(sessions.status, "completed"),
         isNotNull(sessions.sessionType),
       ),
-    );
+    )
+    // DISTINCT ON keeps the first row per question in this order: the latest.
+    .orderBy(attempts.questionId, desc(attempts.submittedAt), desc(attempts.id));
 
   return rows.flatMap((row) =>
     row.type && row.submittedAt

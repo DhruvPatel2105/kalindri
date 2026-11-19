@@ -2,12 +2,11 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
-import { OFFICIAL_QUESTION_COUNTS } from "@/lib/questions/labels";
+import { OFFICIAL_QUESTION_COUNTS, QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
 import { formatWeight, SCORE_WEIGHT_DISCLOSURE, SKILL_LABELS, weightsForType } from "@/lib/scoring/derivedWeights";
 import { loadWeights } from "@/lib/scoring/loadWeights";
 
-import { TYPE_LABELS } from "./typeLabels";
 
 /**
  * Where a question type lands: two separate ways to work through it.
@@ -27,7 +26,7 @@ export default async function QuestionTypeLandingPage({
 
   if (!(QUESTION_TYPES as readonly string[]).includes(type)) notFound();
   const questionType = type as QuestionType;
-  const label = TYPE_LABELS[questionType] ?? type;
+  const label = QUESTION_TYPE_LABELS[questionType];
   const { rows: weightRows } = await loadWeights(user.orgId);
   const contribution = weightsForType(weightRows, questionType);
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 
 import { clampCount } from "@/lib/practice/questionCount";
 
@@ -21,15 +21,20 @@ export function StartTestControl({
 }) {
   const router = useRouter();
   const [text, setText] = useState(String(total));
+  // True from the click until the test page has loaded: the button shows
+  // "Starting…" and can't be pressed again, so one click is one test.
+  const [isPending, startTransition] = useTransition();
 
   const parsed = /^\d+$/.test(text) ? Number(text) : undefined;
   const count = clampCount(parsed, total);
   const valid = parsed !== undefined && parsed >= 1;
 
   function start() {
-    if (!valid) return;
+    if (!valid || isPending) return;
     // The whole set needs no parameter.
-    router.push(count >= total ? `/practice/${type}/${setId}` : `/practice/${type}/${setId}?count=${count}`);
+    const href =
+      count >= total ? `/practice/${type}/${setId}` : `/practice/${type}/${setId}?count=${count}`;
+    startTransition(() => router.push(href));
   }
 
   return (
@@ -49,6 +54,7 @@ export function StartTestControl({
           max={total}
           value={text}
           onChange={(event) => setText(event.target.value)}
+          disabled={isPending}
           onBlur={() => setText(String(valid ? count : total))}
           aria-label={`Number of questions, 1 to ${total}`}
           className="w-14 rounded border border-[#cfccc2] bg-white px-2 py-1.5 text-center text-sm text-[#1e2a2a] focus:border-[#1f6f6b] focus:outline-none"
@@ -57,10 +63,11 @@ export function StartTestControl({
       </label>
       <button
         type="submit"
-        disabled={!valid}
+        disabled={!valid || isPending}
+        aria-busy={isPending}
         className="rounded bg-[#1f6f6b] px-4 py-2 text-sm font-semibold text-white hover:bg-[#17544f] disabled:opacity-50"
       >
-        Start test
+        {isPending ? "Starting…" : "Start test"}
       </button>
     </form>
   );
