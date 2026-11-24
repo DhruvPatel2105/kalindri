@@ -8,6 +8,7 @@ import {
   getTestResults,
   TestSessionError,
 } from "@/lib/practice/testEngine";
+import { formatSeconds } from "@/lib/practice/pace";
 import { resultKind, type QuestionResultKind } from "@/lib/practice/testResults";
 import { QUESTION_TYPES } from "@/lib/questions/types";
 import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
@@ -83,6 +84,8 @@ export default async function ReviewPage({
   const base = `/practice/${type}/${setId}/results/${sessionId}`;
   const hrefFor = (n: number) => `${base}/review?q=${n}`;
   const label = QUESTION_TYPE_LABELS[results.type];
+  const seconds = results.questions[index]?.timeSeconds ?? 0;
+  const timeTaken = seconds > 0 ? formatSeconds(seconds) : null;
 
   return (
     <div className="min-h-screen bg-[#f4f2ee]">
@@ -99,9 +102,16 @@ export default async function ReviewPage({
 
       <div className="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-8 lg:flex-row lg:items-start">
         <main className="flex min-w-0 flex-1 flex-col gap-6">
-          <h1 className="text-sm font-semibold uppercase tracking-wide text-[#5c6a68]">
-            Review · Question {number} of {total}
-          </h1>
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+            <h1 className="text-sm font-semibold uppercase tracking-wide text-[#5c6a68]">
+              Review · Question {number} of {total}
+            </h1>
+            {timeTaken ? (
+              <span className="rounded bg-[#eceae4] px-2 py-0.5 text-xs font-medium text-[#3d4a48]">
+                Time taken: {timeTaken}
+              </span>
+            ) : null}
+          </div>
 
           <ReviewQuestion review={data.review} />
 

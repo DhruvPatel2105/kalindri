@@ -16,8 +16,8 @@ import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
 import { LocalTime } from "../../../../LocalTime";
 import { RetryChain } from "./RetryChain";
 import { StartRetryButton } from "./StartRetryButton";
+import { formatSeconds } from "@/lib/practice/pace";
 import { Stat } from "../../../../../_components/Stat";
-import { TimeAnalysis } from "./TimeAnalysis";
 
 /**
  * The session dashboard a student lands on straight after Submit Test: marks
@@ -88,6 +88,8 @@ export default async function TestResultsPage({
   }
 
   const { summary } = results;
+  // Time on the test: the active seconds counted per question (none for tests taken before timing existed).
+  const totalSeconds = results.questions.reduce((sum, q) => sum + (q.timeSeconds ?? 0), 0);
   const label = QUESTION_TYPE_LABELS[results.type];
   const base = `/practice/${type}/${setId}/results/${sessionId}`;
   const reviewHref = (n: number) => `${base}/review?q=${n}`;
@@ -169,17 +171,20 @@ export default async function TestResultsPage({
         {/* ── breakdown ── */}
         <section
           aria-label="Results breakdown"
-          className="grid grid-cols-2 gap-3 sm:grid-cols-4"
+          className="grid grid-cols-2 gap-3 sm:grid-cols-5"
         >
           <Stat label="Correct" value={String(summary.correct)} tone="text-[#17544f]" />
           <Stat label="Incorrect" value={String(summary.incorrect + summary.unanswered)} tone="text-[#b0472f]" />
           {summary.partial > 0 ? (
             <Stat label="Partly correct" value={String(summary.partial)} tone="text-[#8a6a1e]" />
           ) : null}
+          {totalSeconds > 0 ? (
+            <>
+              <Stat label="Time spent" value={formatSeconds(totalSeconds)} />
+              <Stat label="Average per question" value={formatSeconds(totalSeconds / Math.max(1, results.questions.length))} />
+            </>
+          ) : null}
         </section>
-
-        {/* ── time analysis ── */}
-        <TimeAnalysis results={results} reviewHref={reviewHref} />
 
         {/* ── practise incorrect questions ── */}
         {latest && latest.status === "in_progress" ? (
