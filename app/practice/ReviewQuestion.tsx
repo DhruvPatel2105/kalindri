@@ -96,7 +96,7 @@ function Body({ review }: { review: QuestionReview }) {
       );
     case "FIB_RW":
     case "FIB_READING":
-      return <Blanks parts={review.parts} blanks={review.blanks} answered={review.answered} />;
+      return <Blanks parts={review.parts} blanks={review.blanks} answered={review.answered} note={review.note ?? null} />;
     case "REORDER_PARAGRAPH":
       return <Reorder review={review} />;
     default:
@@ -166,10 +166,12 @@ function Blanks({
   parts,
   blanks,
   answered,
+  note,
 }: {
   parts: string[];
   blanks: ReviewBlank[];
   answered: boolean;
+  note: string | null;
 }) {
   return (
     <div className="flex flex-col gap-5">
@@ -231,6 +233,13 @@ function Blanks({
           </li>
         ))}
       </ul>
+
+      {note ? (
+        <p className="rounded border border-[#e6e2d9] bg-[#fafaf8] px-4 py-3 text-sm leading-relaxed text-[#3d4a48]">
+          <span className="font-semibold text-[#1e2a2a]">Note: </span>
+          {note}
+        </p>
+      ) : null}
     </div>
   );
 }

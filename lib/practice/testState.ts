@@ -29,6 +29,8 @@ export interface QuestionSnapshot {
 export interface TestState {
   snapshots: QuestionSnapshot[];
   answers: Record<string, unknown>;
+  /** Active seconds the student spent on each question (by question id), saved as they work. Absent on tests taken before timing existed. */
+  timings?: Record<string, number>;
 }
 
 const testStateSchema = z.object({
@@ -41,6 +43,7 @@ const testStateSchema = z.object({
     }),
   ),
   answers: z.record(z.string(), z.unknown()).default({}),
+  timings: z.record(z.string(), z.number().nonnegative()).optional(),
 });
 
 export function buildTestState(snapshots: QuestionSnapshot[]): TestState {
@@ -60,6 +63,7 @@ export function extractTestState(state: unknown): TestState | null {
       ...(s.version !== undefined ? { version: s.version } : {}),
     })),
     answers: parsed.data.answers,
+    ...(parsed.data.timings && Object.keys(parsed.data.timings).length > 0 ? { timings: parsed.data.timings } : {}),
   };
 }
 

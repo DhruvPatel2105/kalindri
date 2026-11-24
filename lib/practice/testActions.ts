@@ -9,7 +9,7 @@
 
 import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 
-import { finishTest, saveTestProgress, startRetry } from "./testEngine";
+import { finishTest, saveTestProgress, saveTestTimings, startRetry } from "./testEngine";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -29,6 +29,23 @@ export async function saveProgress(input: {
     return { ok: true };
   } catch (err) {
     return failure(err, "Couldn't save your answer.");
+  }
+}
+
+/**
+ * Time-per-question autosave: cumulative active seconds per question id.
+ * Best effort — a failure here never blocks answering or submitting.
+ */
+export async function saveTimings(input: {
+  sessionId: string;
+  timings: Record<string, number>;
+}): Promise<ActionResult> {
+  const user = await requireActiveSession();
+  try {
+    await saveTestTimings(user, input);
+    return { ok: true };
+  } catch (err) {
+    return failure(err, "Couldn't save timing.");
   }
 }
 

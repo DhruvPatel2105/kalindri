@@ -56,7 +56,8 @@ export type ClientQuestion =
       kind: "FIB_RW";
       id: string;
       parts: string[];
-      blanks: { options: string[] }[];
+      /** `options: null` = no choices; the student types the word. */
+      blanks: { options: string[] | null }[];
     }
   | { kind: "UNSUPPORTED"; id: string; type: QuestionType };
 

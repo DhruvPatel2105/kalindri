@@ -74,6 +74,8 @@ export type QuestionReview =
       type: "FIB_RW" | "FIB_READING";
       parts: string[];
       blanks: ReviewBlank[];
+      /** An explanation the question's author attached, if any. */
+      note?: string | null;
     })
   | (Common & {
       type: "REORDER_PARAGRAPH";
@@ -148,6 +150,7 @@ export function buildQuestionReview(
         ...common(answered, marks),
         parts: p.passage_with_blanks.split(GAP),
         blanks: blanksOf(marks),
+        note: p.note ?? null,
       };
     }
 

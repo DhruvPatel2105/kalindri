@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import type { ClientQuestion } from "@/lib/practice/clientQuestion";
-import { saveProgress, submitTest } from "@/lib/practice/testActions";
+import { formatClock } from "@/lib/practice/clock";
+import { saveProgress, saveTimings, submitTest } from "@/lib/practice/testActions";
 import { answerStatuses, clampIndex, countAnswered } from "@/lib/practice/testState";
 
 import { BookmarkButton } from "../BookmarkButton";
@@ -31,6 +32,10 @@ const SAVE_DELAY_MS = 600;
  * student resumes where they were. Submitting waits for the queue to drain and re-sends any
  * answer that failed to save, so a flaky connection can't silently drop one.
  * No marks are shown until the test is submitted.
+ *
+ * It also keeps time: a clock in the top bar, and the active seconds spent on
+ * each question (counted only while this tab is visible), saved with the
+ * answers so the results can show where the time went.
  */
 export function TestRunner({
   sessionId,
@@ -40,6 +45,7 @@ export function TestRunner({
   resultsHref,
   initialIndex,
   initialAnswers,
+  initialTimings = {},
   questions,
 }: {
   sessionId: string;
@@ -50,6 +56,8 @@ export function TestRunner({
   resultsHref: string;
   initialIndex: number;
   initialAnswers: Record<string, unknown>;
+  /** Seconds already spent per question (by id) — the clock carries on from here. */
+  initialTimings?: Record<string, number>;
   questions: ClientQuestion[];
 }) {
   const router = useRouter();
@@ -61,6 +69,11 @@ export function TestRunner({
   const [confirming, setConfirming] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+
+  const timingsRef = useRef<Record<string, number>>({ ...initialTimings });
+  const timingsDirty = useRef(false);
+  const submittingRef = useRef(false);
+  const [elapsed, setElapsed] = useState(() => Object.values(initialTimings).reduce((sum, s) => sum + s, 0));
 
   const answersRef = useRef(answers);
   const indexRef = useRef(index);
@@ -109,6 +122,20 @@ export function TestRunner({
     });
   }
 
+  /** Queues the time spent so far (cumulative per question) behind any saves; best effort. */
+  function sendTimings() {
+    if (!timingsDirty.current) return;
+    timingsDirty.current = false;
+    const snapshot = { ...timingsRef.current };
+    chain.current = chain.current.then(async () => {
+      try {
+        await saveTimings({ sessionId, timings: snapshot });
+      } catch {
+        timingsDirty.current = true; // try again with the next flush
+      }
+    });
+  }
+
   /** Starts (or restarts) the countdown to sending whatever is waiting. */
   function scheduleFlush() {
     if (timer.current) clearTimeout(timer.current);
@@ -124,6 +151,7 @@ export function TestRunner({
       clearTimeout(timer.current);
       timer.current = null;
     }
+    sendTimings();
     if (dirty.current.size === 0 && !positionDirty.current) return false;
     if (dirty.current.size > 0) {
       for (const [questionId, response] of dirty.current) {
@@ -158,6 +186,25 @@ export function TestRunner({
     scheduleFlush();
   }
 
+  // The clock: once a second, while this tab is showing, the current question
+  // gets another second. Saved with the next flush, and every 15 s regardless.
+  useEffect(() => {
+    let ticks = 0;
+    const interval = setInterval(() => {
+      if (document.visibilityState !== "visible" || submittingRef.current) return;
+      const id = questions[indexRef.current]?.id;
+      if (!id) return;
+      timingsRef.current[id] = (timingsRef.current[id] ?? 0) + 1;
+      timingsDirty.current = true;
+      setElapsed((seconds) => seconds + 1);
+      ticks += 1;
+      if (ticks % 15 === 0) flushDirty();
+    }, 1000);
+    return () => clearInterval(interval);
+    // Only refs and the stable question list are read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Warn before closing the tab while a save is waiting or on its way, and
   // send anything waiting if the runner is left (e.g. via the navigation bar).
   useEffect(() => {
@@ -177,6 +224,7 @@ export function TestRunner({
   }, []);
 
   async function handleSubmit() {
+    submittingRef.current = true;
     setSubmitting(true);
     setSubmitError(null);
     flushDirty();
@@ -254,6 +302,14 @@ export function TestRunner({
                   : saveStatus === "error"
                     ? "Couldn't save — will retry"
                     : ""}
+            </span>
+            <span
+              role="timer"
+              aria-label="Time spent on this test"
+              className="rounded bg-[#eaf2f1] px-2.5 py-1 font-mono text-sm font-semibold tabular-nums text-[#17544f]"
+              title="Time spent on this test (only while this page is open)"
+            >
+              {formatClock(elapsed)}
             </span>
             <BookmarkButton />
           </div>

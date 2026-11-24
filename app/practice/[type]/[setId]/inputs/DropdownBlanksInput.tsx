@@ -3,7 +3,9 @@
 /**
  * FIB_RW answer input — controlled; `value` is one chosen option per blank
  * ("" = not chosen), the same shape the scorer takes. `correct_option` is
- * never a prop — only the options.
+ * never a prop — only the options. A blank with `options: null` has no
+ * choices, so it is a small text box instead (marked the same way, ignoring
+ * capital letters).
  */
 export function DropdownBlanksInput({
   parts,
@@ -13,7 +15,7 @@ export function DropdownBlanksInput({
   disabled,
 }: {
   parts: string[];
-  blanks: { options: string[] }[];
+  blanks: { options: string[] | null }[];
   value: string[];
   onChange: (next: string[]) => void;
   disabled?: boolean;
@@ -39,7 +41,25 @@ export function DropdownBlanksInput({
             return (
               <span key={i}>
                 {text}
-                {blank ? (
+                {blank && blank.options === null ? (
+                  <input
+                    type="text"
+                    value={chosen}
+                    disabled={disabled}
+                    onChange={(e) => handleSelect(i, e.target.value)}
+                    aria-label={`Blank ${i + 1}, type your answer`}
+                    placeholder="type here"
+                    autoComplete="off"
+                    autoCapitalize="none"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    className={`mx-1.5 inline-block w-32 max-w-[40vw] rounded border px-2 py-1 align-middle text-sm ${
+                      chosen
+                        ? "border-[#1f6f6b] bg-[#eaf2f1] font-medium text-[#173534]"
+                        : "border-[#a9c4c1] bg-white text-[#7d8a88]"
+                    }`}
+                  />
+                ) : blank ? (
                   <select
                     value={chosen}
                     disabled={disabled}
@@ -52,7 +72,7 @@ export function DropdownBlanksInput({
                     }`}
                   >
                     <option value="">— select —</option>
-                    {blank.options.map((option) => (
+                    {(blank.options ?? []).map((option) => (
                       <option key={option} value={option}>
                         {option}
                       </option>

@@ -17,6 +17,7 @@ import { LocalTime } from "../../../../LocalTime";
 import { RetryChain } from "./RetryChain";
 import { StartRetryButton } from "./StartRetryButton";
 import { Stat } from "../../../../../_components/Stat";
+import { TimeAnalysis } from "./TimeAnalysis";
 
 /**
  * The session dashboard a student lands on straight after Submit Test: marks
@@ -176,6 +177,9 @@ export default async function TestResultsPage({
             <Stat label="Partly correct" value={String(summary.partial)} tone="text-[#8a6a1e]" />
           ) : null}
         </section>
+
+        {/* ── time analysis ── */}
+        <TimeAnalysis results={results} reviewHref={reviewHref} />
 
         {/* ── practise incorrect questions ── */}
         {latest && latest.status === "in_progress" ? (

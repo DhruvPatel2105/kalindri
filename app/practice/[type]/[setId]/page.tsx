@@ -70,6 +70,7 @@ export default async function PracticeTestPage({
       resultsHref={`/practice/${type}/${setId}/results/${test.sessionId}`}
       initialIndex={test.currentIndex}
       initialAnswers={test.answers}
+      initialTimings={test.timings}
       questions={test.snapshots.map((snapshot) => toClientQuestion(snapshot))}
     />
   );

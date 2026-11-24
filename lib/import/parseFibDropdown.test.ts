@@ -37,7 +37,7 @@ describe("parseFibDropdownFile", () => {
     expect(item?.ok).toBe(true);
     if (item?.ok) {
       const first = item.payload.blanks[0];
-      expect(first?.options[0]).not.toBe("renew");
+      expect(first?.options?.[0]).not.toBe("renew");
       expect([...(first?.options ?? [])].sort()).toEqual(
         ["renew", "renews", "renewing", "renewed"].sort(),
       );

@@ -4,6 +4,7 @@ import { requireActiveSession } from "@/lib/auth/requireActiveSession";
 import { isUuid } from "@/lib/validation/uuid";
 import { loadLearnSet } from "@/lib/practice/learnEngine";
 import { QuestionNotAvailableError } from "@/lib/practice/testEngine";
+import { hasPracticeBanks } from "@/lib/practice/practiceBanks";
 import { parseCountParam } from "@/lib/practice/questionCount";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
 import { QUESTION_TYPE_LABELS } from "@/lib/questions/labels";
@@ -51,9 +52,10 @@ export default async function PracticeSetPage({
     <PracticeRunner
       type={type}
       setId={set.setId}
-      title="Practice"
+      title={hasPracticeBanks(type as QuestionType) ? set.title : "Practice"}
       typeLabel={QUESTION_TYPE_LABELS[set.type]}
       listHref={`/practice/${type}/learn`}
+      listLabel={hasPracticeBanks(type as QuestionType) ? "Switch bank" : "New practice"}
       questions={set.questions}
     />
   );

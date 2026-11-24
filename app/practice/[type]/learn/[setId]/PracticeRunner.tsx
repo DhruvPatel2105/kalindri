@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import type { LearnQuestion } from "@/lib/practice/learnEngine";
 import { setBookmarkAction } from "@/lib/practice/bookmarkActions";
 import type { BookmarkColor } from "@/lib/practice/bookmarkColors";
+import { formatClock } from "@/lib/practice/clock";
 import { answerQuestionAction } from "@/lib/practice/learnActions";
+import { suggestedPace } from "@/lib/practice/pace";
+import type { QuestionType } from "@/lib/questions/types";
 import { buildQuestionReview } from "@/lib/practice/reviewModel";
 import type { QuestionReview } from "@/lib/practice/reviewModel";
 import type { QuestionResultKind } from "@/lib/practice/testResults";
@@ -41,6 +44,7 @@ export function PracticeRunner({
   title,
   typeLabel,
   listHref,
+  listLabel = "New practice",
   questions,
 }: {
   type: string;
@@ -48,9 +52,32 @@ export function PracticeRunner({
   title: string;
   typeLabel: string;
   listHref: string;
+  /** What the link back to the start page says ("Switch bank" where there are banks). */
+  listLabel?: string;
   questions: LearnQuestion[];
 }) {
   const [index, setIndex] = useState(0);
+  // Time on this page and on each question — counted only while the tab is
+  // showing; kept in the browser for this visit (Practice has no submit).
+  const spent = useRef<Record<string, number>>({});
+  const indexRef = useRef(0);
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    indexRef.current = index;
+  }, [index]);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (document.visibilityState !== "visible") return;
+      const id = questions[indexRef.current]?.id;
+      if (!id) return;
+      spent.current[id] = (spent.current[id] ?? 0) + 1;
+      setTick((n) => n + 1);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [questions]);
+  const pace = suggestedPace(type as QuestionType);
+  // Fill-in-the-blank types mark each blank, so the button says what it does.
+  const answerLabel = type === "FIB_RW" ? "Check answers" : "Answer";
   const [responses, setResponses] = useState<Record<string, unknown>>({});
   const [reviews, setReviews] = useState<Record<string, QuestionReview | undefined>>({});
   const [lastKinds, setLastKinds] = useState<Record<string, QuestionResultKind | null>>(
@@ -172,11 +199,19 @@ export function PracticeRunner({
             <span className="hidden text-xs text-[#7d8a88] sm:inline">{typeLabel} · Practice</span>
           </div>
           <div className="flex flex-none items-center gap-4">
+            <span
+              role="timer"
+              aria-label="Time spent practising"
+              title="Time spent practising (only while this page is open)"
+              className="rounded bg-[#eaf2f1] px-2.5 py-1 font-mono text-sm font-semibold tabular-nums text-[#17544f]"
+            >
+              {formatClock(Object.values(spent.current).reduce((sum, s) => sum + s, 0))}
+            </span>
             <span className="text-xs text-[#5c6a68]" aria-live="polite">
               {attempted} of {questions.length} attempted · {correct} correct
             </span>
             <Link href={listHref} className="text-sm font-medium text-[#5c6a68] hover:text-[#1f6f6b]">
-              New practice
+              {listLabel}
             </Link>
           </div>
         </div>
@@ -184,7 +219,7 @@ export function PracticeRunner({
 
       <main className="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-8">
         <p className="text-xs text-[#7d8a88]">
-          Press Answer whenever you like to see the correct answer — try the question first for feedback on your
+          Press {answerLabel} whenever you like to see the correct answer — try the question first for feedback on your
           own answer. Try Again lets you have another go. Practice is tracked separately from your tests.
         </p>
         {current ? (
@@ -195,6 +230,15 @@ export function PracticeRunner({
               </span>
               <DifficultyTag difficulty={current.difficulty} />
               <span className={`rounded px-2 py-0.5 font-medium ${status.tone}`}>{status.label}</span>
+              <span
+                className={`rounded px-2 py-0.5 font-mono tabular-nums ${
+                  pace && (spent.current[current.id] ?? 0) > pace.limit ? "bg-[#fbf3e3] text-[#8a6a1e]" : "bg-[#eceae4] text-[#5c6a68]"
+                }`}
+                title="Time on this question"
+              >
+                {formatClock(spent.current[current.id] ?? 0)}
+                {pace ? ` · suggested ${pace.label}` : ""}
+              </span>
               {attemptsSoFar > 0 ? (
                 <span className="text-[#7d8a88]">
                   {attemptsSoFar} {attemptsSoFar === 1 ? "attempt" : "attempts"}
@@ -243,7 +287,7 @@ export function PracticeRunner({
                   onClick={() => handleAnswer(current)}
                   className="rounded bg-[#1f6f6b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#17544f] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  Answer
+                  {answerLabel}
                 </button>
               )}
             </div>
@@ -273,7 +317,7 @@ export function PracticeRunner({
                   href={listHref}
                   className="rounded bg-[#1f6f6b] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#17544f]"
                 >
-                  Finish — change set
+                  Finish — {listLabel.toLowerCase()}
                 </Link>
               )}
             </div>

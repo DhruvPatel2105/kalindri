@@ -38,10 +38,18 @@ export interface RotationInputs {
  */
 export async function loadRotationInputs(
   db: Database,
-  params: { userId: string; orgId: string; type: QuestionType },
+  params: {
+    userId: string;
+    orgId: string;
+    type: QuestionType;
+    /** Rotate over just these questions (already checked live by the caller) instead of every published question of the type. */
+    pool?: readonly string[];
+  },
 ): Promise<RotationInputs> {
   const [poolRows, attemptRows, openRows] = await Promise.all([
-    db
+    params.pool
+      ? Promise.resolve(params.pool.map((id) => ({ id })))
+      : db
       .select({ id: questions.id })
       .from(questions)
       .where(
@@ -109,7 +117,7 @@ export interface BankSet {
  */
 export async function getBankSet(
   db: Database,
-  params: { orgId: string; type: QuestionType; pool: readonly string[] },
+  params: { orgId: string; type: QuestionType; pool: readonly string[]; title?: string },
 ): Promise<BankSet> {
   const find = () =>
     db
@@ -131,7 +139,7 @@ export async function getBankSet(
       .values({
         orgId: params.orgId,
         type: params.type,
-        title: `Mixed test — ${QUESTION_TYPE_LABELS[params.type]}`,
+        title: params.title ?? `Mixed test — ${QUESTION_TYPE_LABELS[params.type]}`,
         questionIds: [...params.pool],
         status: "published",
         isActive: true,
@@ -151,6 +159,10 @@ export async function getBankSet(
       .update(questionSets)
       .set({ questionIds: [...params.pool], updatedAt: new Date() })
       .where(eq(questionSets.id, set.id));
+  }
+  if (params.title && set.title !== params.title) {
+    await db.update(questionSets).set({ title: params.title }).where(eq(questionSets.id, set.id));
+    return { id: set.id, title: params.title };
   }
   return { id: set.id, title: set.title };
 }

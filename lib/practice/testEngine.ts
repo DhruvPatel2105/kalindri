@@ -57,6 +57,7 @@ import {
 } from "@/lib/scoring/registry";
 
 import { getBankSet, loadRotationInputs } from "./bank";
+import { ALL_QUESTIONS_TITLE, rotationPoolFor } from "./testBanks";
 import { pickQuestionIds } from "./questionCount";
 import { selectRotation } from "./rotation";
 import { retryLabel } from "./retry";
@@ -117,6 +118,8 @@ export interface ActiveTest {
   snapshots: QuestionSnapshot[];
   /** Draft answers keyed by question id. */
   answers: Record<string, unknown>;
+  /** Active seconds already spent per question (by id), so the clock carries on after a reload. */
+  timings: Record<string, number>;
 }
 
 /* -------------------------------------------------------------------------- */
@@ -222,6 +225,7 @@ export async function startOrResumeTest(
       currentIndex: clampIndex(row.currentItemIndex, state.snapshots.length),
       snapshots: state.snapshots,
       answers: state.answers,
+      timings: state.timings ?? {},
     };
   };
 
@@ -230,11 +234,20 @@ export async function startOrResumeTest(
 
   // Fresh start. A MIXED test (the type's bank set) draws its questions with
   // rotation — never a question the student has answered this round — from
-  // the whole bank; an ordinary set keeps its own questions and order.
+  // the whole bank; so does a test of one of a type's named banks (Fill in the
+  // Blanks: Main / Secondary), over that bank's own questions. An ordinary set
+  // keeps its own questions and order.
   let source = rows;
   let order: readonly string[] = set.questionIds;
-  if (set.isBank) {
-    const inputs = await loadRotationInputs(db, { userId: user.id, orgId: user.orgId, type });
+  const bankPool = await rotationPoolFor(db, { orgId: user.orgId, type, set: { isBank: set.isBank, title: set.title } });
+  const rotates = set.isBank || bankPool !== null;
+  if (rotates) {
+    const inputs = await loadRotationInputs(db, {
+      userId: user.id,
+      orgId: user.orgId,
+      type,
+      ...(bankPool ? { pool: bankPool } : {}),
+    });
     const chosen = selectRotation({
       pool: inputs.pool,
       history: inputs.history,
@@ -264,8 +277,15 @@ export async function startOrResumeTest(
         ),
       );
     order = chosen;
-    // Keep the set's id list equal to the bank (also creates nothing new here).
-    await getBankSet(db, { orgId: user.orgId, type, pool: inputs.pool });
+    // Keep the mixed set's id list equal to the bank (also creates nothing new here).
+    if (set.isBank) {
+      await getBankSet(db, {
+        orgId: user.orgId,
+        type,
+        pool: inputs.pool,
+        ...(bankPool ? { title: ALL_QUESTIONS_TITLE } : {}),
+      });
+    }
   }
 
   const byId = new Map(source.map((row) => [row.id, row]));
@@ -285,7 +305,7 @@ export async function startOrResumeTest(
 
   // A shorter test: a random selection of the set's questions, in set order.
   // (A mixed test has already been sized by the rotation above.)
-  if (options.count !== undefined && !set.isBank) {
+  if (options.count !== undefined && !rotates) {
     const keep = new Set(
       pickQuestionIds(
         snapshots.map((snapshot) => snapshot.id),
@@ -337,6 +357,7 @@ export async function startOrResumeTest(
     currentIndex: 0,
     snapshots,
     answers: {},
+    timings: {},
   };
 }
 
@@ -493,6 +514,48 @@ async function saveTestProgressChecked(
     .where(and(eq(sessions.id, session.id), eq(sessions.status, "in_progress")));
 }
 
+/**
+ * Time-per-question autosave. The browser sends the CUMULATIVE active seconds
+ * it has counted for the questions it worked on; they are stored in the
+ * session's state beside the answers (and copied onto each attempt at submit).
+ * Only this student's open session is touched, only questions that are in it
+ * are kept, and each value is held to 0..MAX_QUESTION_SECONDS.
+ */
+const MAX_QUESTION_SECONDS = 2 * 60 * 60;
+
+export async function saveTestTimings(
+  user: SessionUser,
+  input: { sessionId: string; timings: Record<string, unknown> },
+): Promise<void> {
+  const clean: Record<string, number> = {};
+  let seen = 0;
+  for (const [id, value] of Object.entries(input.timings)) {
+    if (++seen > 100) break;
+    if (id.length > 64 || typeof value !== "number" || !Number.isFinite(value) || value < 0) continue;
+    clean[id] = Math.min(Math.round(value), MAX_QUESTION_SECONDS);
+  }
+  if (Object.keys(clean).length === 0) return;
+
+  await getDb()
+    .update(sessions)
+    .set({
+      state: sql`jsonb_set(${sessions.state}, '{timings}',
+        COALESCE(${sessions.state}->'timings', '{}'::jsonb) || COALESCE((
+          SELECT jsonb_object_agg(t.key, t.value)
+            FROM jsonb_each(${JSON.stringify(clean)}::jsonb) AS t
+           WHERE EXISTS (SELECT 1 FROM jsonb_array_elements(${sessions.state}->'snapshots') AS s WHERE s->>'id' = t.key)
+        ), '{}'::jsonb), true)`,
+    })
+    .where(
+      and(
+        eq(sessions.id, input.sessionId),
+        eq(sessions.userId, user.id),
+        eq(sessions.status, "in_progress"),
+        sql`jsonb_typeof(${sessions.state}) = 'object'`,
+      ),
+    );
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Submit                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -579,6 +642,7 @@ export async function finishTest(
     question_version: row.snapshot.version ?? null,
     scoring_rules: scoringRulesFor(row.snapshot.type),
     response: row.answered ? row.response : null,
+    time_taken_seconds: state.timings?.[row.snapshot.id] !== undefined ? Math.round(state.timings[row.snapshot.id] ?? 0) : null,
     status: row.answered ? "submitted" : "abandoned",
     is_correct: row.answered ? (row.result ? row.result.score >= row.result.maxScore && row.result.maxScore > 0 : null) : false,
     counts_toward_stats: row.answered && session.retryOfSessionId === null,
@@ -609,15 +673,15 @@ export async function finishTest(
     ins AS (
       INSERT INTO attempts (id, org_id, session_id, user_id, question_id, question_snapshot,
                             question_type, question_version, scoring_rules, response, status,
-                            is_correct, counts_toward_stats, started_at, submitted_at)
+                            is_correct, counts_toward_stats, time_taken_seconds, started_at, submitted_at)
       SELECT a.id, ${session.orgId}::uuid, done.id, ${user.id}::uuid, a.question_id, a.question_snapshot,
              a.question_type, a.question_version, NULLIF(a.scoring_rules, 'null'::jsonb),
-             NULLIF(a.response, 'null'::jsonb), a.status, a.is_correct, a.counts_toward_stats,
+             NULLIF(a.response, 'null'::jsonb), a.status, a.is_correct, a.counts_toward_stats, a.time_taken_seconds,
              ${session.startedAt.toISOString()}::timestamptz, ${now.toISOString()}::timestamptz
         FROM done, jsonb_to_recordset(${JSON.stringify(attemptRows)}::jsonb) AS a(
                id uuid, question_id uuid, question_snapshot jsonb, question_type question_type,
                question_version int, scoring_rules jsonb, response jsonb, status attempt_status,
-               is_correct boolean, counts_toward_stats boolean)
+               is_correct boolean, counts_toward_stats boolean, time_taken_seconds int)
    RETURNING id
     ),
     sc AS (
@@ -793,6 +857,8 @@ export async function recordAttemptScore(job: ScoreJob): Promise<void> {
 export interface TestResultQuestion extends QuestionOutcome {
   index: number;
   id: string;
+  /** Active seconds spent on the question; null when timing wasn't recorded (tests taken before it existed). */
+  timeSeconds: number | null;
 }
 
 export interface TestResults {
@@ -883,6 +949,7 @@ export async function getTestResults(
         answered,
         score: row?.score != null ? Number(row.score) : null,
         maxScore,
+        timeSeconds: state.timings?.[snapshot.id] ?? null,
       };
     },
   );
@@ -1213,6 +1280,7 @@ export async function loadRetrySession(
     currentIndex: clampIndex(session.currentItemIndex, state.snapshots.length),
     snapshots: state.snapshots,
     answers: state.answers,
+    timings: state.timings ?? {},
   };
 }
 

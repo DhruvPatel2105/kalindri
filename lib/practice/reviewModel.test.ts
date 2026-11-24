@@ -195,3 +195,34 @@ describe("corrupt data", () => {
     expect(() => buildQuestionReview({ id: "x", type: "MCS_READING", payload: {} }, "a")).toThrow();
   });
 });
+
+describe("Fill in the Blanks notes and typed blanks", () => {
+  const withNote: QuestionSnapshot = {
+    id: "n1",
+    type: "FIB_RW",
+    payload: {
+      passage_with_blanks: "Riders {{1}} the pass and {{2}} a receipt.",
+      blanks: [
+        { index: 1, options: ["renew", "renews", "renewed", "renewing"], correct_option: "renew" },
+        { index: 2, options: null, correct_option: "Keep" },
+      ],
+      note: "Blank 2: keep fits.",
+    },
+  };
+
+  it("carries the author's note and marks a typed blank ignoring capitals", () => {
+    const right = buildQuestionReview(withNote, ["renew", "keep"]);
+    expect(right.type).toBe("FIB_RW");
+    if (right.type === "FIB_RW") {
+      expect(right.note).toBe("Blank 2: keep fits.");
+      expect(right.score).toBe(right.maxScore);
+    }
+    const wrong = buildQuestionReview(withNote, ["renew", "keeps"]);
+    expect(wrong.score).toBe(1);
+  });
+
+  it("has no note when the question has none", () => {
+    const plain = buildQuestionReview({ ...withNote, payload: { ...(withNote.payload as object), note: undefined } }, ["renew", "keep"]);
+    if (plain.type === "FIB_RW") expect(plain.note).toBeNull();
+  });
+});

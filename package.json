@@ -21,6 +21,7 @@
     "import-questions": "tsx --env-file-if-exists=.env.local lib/db/importQuestions.ts",
     "db:seed:weights": "tsx --env-file-if-exists=.env.local lib/db/seedSkillWeights.ts",
     "set-password": "tsx --env-file-if-exists=.env.local lib/db/set-password.ts",
+    "import-fib-banks": "tsx --env-file-if-exists=.env.local lib/db/importFibBanks.ts",
     "create-sets": "tsx --env-file-if-exists=.env.local lib/db/createQuestionSets.ts"
   },
   "dependencies": {
