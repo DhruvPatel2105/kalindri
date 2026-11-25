@@ -161,6 +161,17 @@ describe("table presence", () => {
     expect([...tablesByName.keys()].sort()).toEqual(EXPECTED_TABLE_NAMES);
   });
 
+  it("turns row-level security ON for every table", () => {
+    // Supabase exposes the public schema through a public API; a table without
+    // RLS is readable and editable by anyone with the project URL. The app itself
+    // connects as the postgres role, which RLS does not restrict, so this costs
+    // nothing — but a new table that forgets `.enableRLS()` would leak.
+    const without = [...tablesByName.values()]
+      .filter((table) => !getTableConfig(table).enableRLS)
+      .map((table) => getTableConfig(table).name);
+    expect(without).toEqual([]);
+  });
+
   it("defines all 26 tables", () => {
     expect(tablesByName.size).toBe(26);
   });

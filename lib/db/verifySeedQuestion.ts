@@ -28,6 +28,7 @@ import postgres from "postgres";
 import { scoreDeterministic } from "@/lib/scoring/registry";
 
 import { questions } from "./schema";
+import { sslFor } from "./ssl";
 
 const SUPPORTED_TYPES = [
   "MCM_READING",
@@ -82,7 +83,7 @@ async function main(): Promise<void> {
     );
   }
 
-  const client = postgres(databaseUrl, { prepare: false, max: 1 });
+  const client = postgres(databaseUrl, { prepare: false, max: 1, ssl: sslFor(databaseUrl) });
   const db = drizzle(client);
 
   try {

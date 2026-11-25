@@ -23,6 +23,7 @@ import {
 } from "@/lib/scoring/derivedWeights";
 
 import { organizations, skillWeights } from "./schema";
+import { sslFor } from "./ssl";
 
 const ORG_SLUG = "kalindri"; // must match lib/db/seed.ts's ORG_SLUG
 
@@ -30,7 +31,7 @@ async function main(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is not set (see .env.local).");
 
-  const client = postgres(databaseUrl, { prepare: false, max: 1 });
+  const client = postgres(databaseUrl, { prepare: false, max: 1, ssl: sslFor(databaseUrl) });
   const db = drizzle(client);
   try {
     const [org] = await db

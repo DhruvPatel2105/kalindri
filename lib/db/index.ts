@@ -6,6 +6,7 @@ import postgres from "postgres";
 import { serverEnv } from "@/lib/env";
 import { shouldPrepare } from "@/lib/db/prepare";
 import * as schema from "@/lib/db/schema";
+import { sslFor } from "@/lib/db/ssl";
 
 /**
  * Drizzle client over the Supabase Postgres connection.
@@ -49,6 +50,8 @@ export function getDb(): Database {
   const prepare = shouldPrepare(DATABASE_URL, DATABASE_PREPARE);
   const client = postgres(DATABASE_URL, {
     prepare,
+    // Always encrypted (see ssl.ts): the database is across the internet.
+    ssl: sslFor(DATABASE_URL),
     max: POOL_MAX,
     idle_timeout: IDLE_TIMEOUT_S,
     // Recycle connections now and then (postgres.js default is 30-60 min; on

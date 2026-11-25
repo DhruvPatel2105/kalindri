@@ -13,6 +13,7 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 
 import { organizations } from "./schema";
+import { sslFor } from "./ssl";
 
 const ORG_NAME = "Kalindri";
 const ORG_SLUG = "kalindri";
@@ -25,7 +26,7 @@ async function main(): Promise<void> {
     );
   }
 
-  const client = postgres(databaseUrl, { prepare: false, max: 1 });
+  const client = postgres(databaseUrl, { prepare: false, max: 1, ssl: sslFor(databaseUrl) });
   const db = drizzle(client);
 
   try {

@@ -53,6 +53,7 @@ import { parseMcmFile, parseMcsFile } from "@/lib/import/parseMcm";
 import { parseReorderFile } from "@/lib/import/parseReorder";
 
 import { organizations, questions } from "./schema";
+import { sslFor } from "./ssl";
 
 const ORG_SLUG = "kalindri"; // must match lib/db/seed.ts's ORG_SLUG
 const READING_PART = 2; // lib/questions/types.ts PART_BY_TYPE
@@ -143,7 +144,7 @@ async function main(): Promise<void> {
     );
   }
 
-  const client = postgres(databaseUrl, { prepare: false, max: 1 });
+  const client = postgres(databaseUrl, { prepare: false, max: 1, ssl: sslFor(databaseUrl) });
   const db = drizzle(client);
 
   try {

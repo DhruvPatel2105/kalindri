@@ -33,6 +33,7 @@ import postgres from "postgres";
 import { z } from "zod";
 
 import { organizations, users } from "./schema";
+import { sslFor } from "./ssl";
 
 // Must match lib/db/seed.ts's ORG_SLUG — the organization seeded in session 2.
 const ORG_SLUG = "kalindri";
@@ -95,7 +96,7 @@ async function main(): Promise<void> {
 
   const { email, password } = await resolveCredentials();
 
-  const sql = postgres(databaseUrl, { prepare: false, max: 1 });
+  const sql = postgres(databaseUrl, { prepare: false, max: 1, ssl: sslFor(databaseUrl) });
   const db = drizzle(sql);
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
     auth: { autoRefreshToken: false, persistSession: false },

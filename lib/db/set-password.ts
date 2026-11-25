@@ -24,6 +24,7 @@ import WebSocket from "ws";
 import { chosenPasswordProblem } from "@/lib/auth/chosenPassword";
 
 import { activeSessions, users } from "./schema";
+import { sslFor } from "./ssl";
 
 /** Reads a line from the terminal without echoing it. */
 function askHidden(prompt: string): Promise<string> {
@@ -74,7 +75,7 @@ async function main(): Promise<void> {
     throw new Error("DATABASE_URL, NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY must be set (see .env.local).");
   }
 
-  const client = postgres(databaseUrl, { prepare: false, max: 1 });
+  const client = postgres(databaseUrl, { prepare: false, max: 1, ssl: sslFor(databaseUrl) });
   const db = drizzle(client);
   try {
     const [user] = await db.select({ id: users.id, isActive: users.isActive }).from(users).where(eq(users.email, email)).limit(1);

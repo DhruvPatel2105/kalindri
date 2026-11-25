@@ -39,6 +39,7 @@ import { BANK_MAIN_TAG, BANK_SECONDARY_TAG } from "@/lib/questions/banks";
 import { PRACTICE_BANKS } from "@/lib/practice/practiceBanks";
 
 import { organizations, questions, questionSets } from "./schema";
+import { sslFor } from "./ssl";
 
 const ORG_SLUG = "kalindri";
 const FIB_RW_PART = 1; // lib/questions/types.ts PART_BY_TYPE (Speaking & Writing)
@@ -82,7 +83,7 @@ async function main(): Promise<void> {
 
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is not set (see .env.local).");
-  const client = postgres(databaseUrl, { prepare: false, max: 1 });
+  const client = postgres(databaseUrl, { prepare: false, max: 1, ssl: sslFor(databaseUrl) });
   const db = drizzle(client);
 
   try {

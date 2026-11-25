@@ -196,7 +196,7 @@ export const organizations = pgTable("organizations", {
   slug: text("slug").notNull().unique(),
   isActive: boolean("is_active").notNull().default(true),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const users = pgTable("users", {
   id: pkId(),
@@ -208,7 +208,7 @@ export const users = pgTable("users", {
   notes: text("notes"),
   createdAt: createdAt(),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 /* -------------------------------------------------------------------------- */
 /*  Session control and abuse detection                                        */
@@ -230,7 +230,7 @@ export const activeSessions = pgTable("active_sessions", {
 }, (table) => [
   // Read on every signed-in request (requireActiveSession).
   index("active_sessions_user_id_idx").on(table.userId),
-]);
+]).enableRLS();
 
 /**
  * Time a student actively spent in the app, one row per student per day (in
@@ -259,7 +259,7 @@ export const userActivityDays = pgTable(
     uniqueIndex("user_activity_days_user_day_unique").on(table.userId, table.day),
     index("user_activity_days_org_day_idx").on(table.orgId, table.day),
   ],
-);
+).enableRLS();
 
 export const sessionEvents = pgTable("session_events", {
   id: pkId(),
@@ -275,7 +275,7 @@ export const sessionEvents = pgTable("session_events", {
   previousIp: text("previous_ip"),
   previousGeo: text("previous_geo"),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const accountFlags = pgTable("account_flags", {
   id: pkId(),
@@ -289,7 +289,7 @@ export const accountFlags = pgTable("account_flags", {
   reviewedBy: uuid("reviewed_by").references(() => users.id),
   reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 /* -------------------------------------------------------------------------- */
 /*  Question bank                                                              */
@@ -327,7 +327,7 @@ export const questions = pgTable("questions", {
 }, (table) => [
   // Practice lists, set building and library counts filter on these.
   index("questions_org_type_status_idx").on(table.orgId, table.type, table.status),
-]);
+]).enableRLS();
 
 /**
  * An ordered group of questions of ONE type that a student sits as a single
@@ -367,7 +367,7 @@ export const questionSets = pgTable("question_sets", {
   uniqueIndex("question_sets_one_bank_per_type")
     .on(table.orgId, table.type)
     .where(sql`${table.isBank}`),
-]);
+]).enableRLS();
 
 /**
  * A student's bookmark on a question: one colour per (student, question),
@@ -397,7 +397,7 @@ export const questionBookmarks = pgTable(
       table.questionId,
     ),
   ],
-);
+).enableRLS();
 
 export const questionStats = pgTable("question_stats", {
   questionId: uuid("question_id")
@@ -408,7 +408,7 @@ export const questionStats = pgTable("question_stats", {
   avgScorePct: numeric("avg_score_pct"),
   flagCount: integer("flag_count").notNull().default(0),
   lastAttemptedAt: timestamp("last_attempted_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 /* -------------------------------------------------------------------------- */
 /*  Mocks (referenced by sessions)                                             */
@@ -420,7 +420,7 @@ export const mockBlueprints = pgTable("mock_blueprints", {
   name: text("name").notNull(),
   partConfig: jsonb("part_config").notNull(),
   isActive: boolean("is_active").notNull().default(true),
-});
+}).enableRLS();
 
 export const mocks = pgTable("mocks", {
   id: pkId(),
@@ -432,7 +432,7 @@ export const mocks = pgTable("mocks", {
   isPublic: boolean("is_public").notNull().default(false),
   createdBy: uuid("created_by").references(() => users.id),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const mockAssignments = pgTable("mock_assignments", {
   id: pkId(),
@@ -448,7 +448,7 @@ export const mockAssignments = pgTable("mock_assignments", {
     .notNull()
     .defaultNow(),
   completedAt: timestamp("completed_at", { withTimezone: true }),
-});
+}).enableRLS();
 
 /* -------------------------------------------------------------------------- */
 /*  Sessions, attempts, scores                                                 */
@@ -531,7 +531,7 @@ export const sessions = pgTable("sessions", {
     "sessions_full_practice_is_own_root",
     sql`${table.retryOfSessionId} IS NOT NULL OR ${table.rootSessionId} IS NULL OR ${table.rootSessionId} = ${table.id}`,
   ),
-]);
+]).enableRLS();
 
 export const attempts = pgTable("attempts", {
   id: pkId(),
@@ -585,7 +585,7 @@ export const attempts = pgTable("attempts", {
   index("attempts_user_question_idx").on(table.userId, table.questionId),
   // Results, review and scoring read a session's attempts.
   index("attempts_session_id_idx").on(table.sessionId),
-]);
+]).enableRLS();
 
 export const scores = pgTable("scores", {
   id: pkId(),
@@ -608,7 +608,7 @@ export const scores = pgTable("scores", {
   // One score per trait per attempt: concurrent scoring can't double-record,
   // and results join scores by attempt.
   uniqueIndex("scores_attempt_trait_unique").on(table.attemptId, table.trait),
-]);
+]).enableRLS();
 
 export const scoreRuns = pgTable("score_runs", {
   id: pkId(),
@@ -628,7 +628,7 @@ export const scoreRuns = pgTable("score_runs", {
   status: scoreRunStatus("status"),
   errorMessage: text("error_message"),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 /* -------------------------------------------------------------------------- */
 /*  Calibration and validation                                                 */
@@ -653,7 +653,7 @@ export const reportedRealScores = pgTable("reported_real_scores", {
   isVerified: boolean("is_verified").notNull().default(false),
   notes: text("notes"),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const calibrationFixtures = pgTable("calibration_fixtures", {
   id: pkId(),
@@ -667,7 +667,7 @@ export const calibrationFixtures = pgTable("calibration_fixtures", {
   clbAnchor: integer("clb_anchor"),
   createdBy: uuid("created_by").references(() => users.id),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 /* -------------------------------------------------------------------------- */
 /*  Analytics                                                                  */
@@ -686,7 +686,7 @@ export const skillWeights = pgTable("skill_weights", {
   updatedAt: timestamp("updated_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const skillEstimates = pgTable("skill_estimates", {
   id: pkId(),
@@ -704,7 +704,7 @@ export const skillEstimates = pgTable("skill_estimates", {
   computedAt: timestamp("computed_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 export const typePerformance = pgTable("type_performance", {
   id: pkId(),
@@ -720,7 +720,7 @@ export const typePerformance = pgTable("type_performance", {
   computedAt: timestamp("computed_at", { withTimezone: true })
     .notNull()
     .defaultNow(),
-});
+}).enableRLS();
 
 /* -------------------------------------------------------------------------- */
 /*  Operations                                                                 */
@@ -739,7 +739,7 @@ export const aiUsage = pgTable("ai_usage", {
   cachedTokens: integer("cached_tokens").notNull().default(0),
   costUsd: numeric("cost_usd").notNull().default("0"),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const auditLog = pgTable("audit_log", {
   id: pkId(),
@@ -751,7 +751,7 @@ export const auditLog = pgTable("audit_log", {
   details: jsonb("details"),
   ipAddress: text("ip_address"),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const scoreFlags = pgTable("score_flags", {
   id: pkId(),
@@ -767,7 +767,7 @@ export const scoreFlags = pgTable("score_flags", {
   resolvedBy: uuid("resolved_by").references(() => users.id),
   resolutionNote: text("resolution_note"),
   createdAt: createdAt(),
-});
+}).enableRLS();
 
 export const systemSettings = pgTable(
   "system_settings",
@@ -781,4 +781,4 @@ export const systemSettings = pgTable(
       .defaultNow(),
   },
   (table) => [primaryKey({ columns: [table.orgId, table.key] })],
-);
+).enableRLS();

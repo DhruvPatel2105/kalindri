@@ -37,6 +37,7 @@ import { PRACTISABLE_TYPES } from "@/lib/questions/practisable";
 import { QUESTION_TYPES, type QuestionType } from "@/lib/questions/types";
 
 import { organizations, questions, questionSets } from "./schema";
+import { sslFor } from "./ssl";
 
 const ORG_SLUG = "kalindri"; // must match lib/db/seed.ts's ORG_SLUG
 const SETTABLE: readonly QuestionType[] = PRACTISABLE_TYPES;
@@ -72,7 +73,7 @@ async function main(): Promise<void> {
   const databaseUrl = process.env.DATABASE_URL;
   if (!databaseUrl) throw new Error("DATABASE_URL is not set (see .env.local).");
 
-  const client = postgres(databaseUrl, { prepare: false, max: 1 });
+  const client = postgres(databaseUrl, { prepare: false, max: 1, ssl: sslFor(databaseUrl) });
   const db = drizzle(client);
 
   try {
